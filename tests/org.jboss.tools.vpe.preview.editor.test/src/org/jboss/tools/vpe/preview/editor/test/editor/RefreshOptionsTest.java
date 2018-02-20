@@ -64,7 +64,7 @@ public class RefreshOptionsTest extends RefreshTest{
 			visualEditor = controller.getPageContext().getEditPart().getVisualEditor();
 			assertNotNull(visualEditor);
 			/* some layout event are deferred causing some refresh if processed at end's tests */
-			while (Display.getDefault().readAndDispatch());
+			waitForRefresh();
 			TestUtil.waitForJobs();
 		} catch (Exception e) {
 			fail(e.getMessage());
