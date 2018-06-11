@@ -22,6 +22,7 @@ import org.jboss.tools.vpe.editor.mapping.VpeDomMapping;
 import org.jboss.tools.vpe.editor.mapping.VpeNodeMapping;
 import org.jboss.tools.vpe.editor.proxy.VpeProxyUtil;
 import org.jboss.tools.vpe.editor.template.VpeTemplateManager;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -77,18 +78,14 @@ public class SourceDomUtil {
 	 *         attribute, checks el expresion to
 	 * @return true if rendered="false"
 	 */
-	public static boolean isRenderedAttrEqFalse(VpePageContext pageContext,
+	public static boolean isRenderedAttrEqFalse(VpeTemplateContext context,
 			Element sourceNode) {
 		boolean result = false;
 		final String ATTR_RENDERED = "rendered"; //$NON-NLS-1$
 		Element tempElement = sourceNode;
 		if (sourceNode.hasAttribute(ATTR_RENDERED)) {
-			if (pageContext.getElService().isELNode(sourceNode)) {
-				tempElement = (Element) VpeProxyUtil
-						.createProxyForELExpressionNode(pageContext, sourceNode);
-			}
 			if ("false".equals(tempElement.getAttribute(ATTR_RENDERED))) { //$NON-NLS-1$
-				String templateName = VpeTemplateManager.getInstance().getTemplateName(pageContext, sourceNode);
+				String templateName = VpeTemplateManager.getInstance().getTemplateName(context, sourceNode);
 				String [] templatePrefix = templateName.split(":"); //$NON-NLS-1$
 				if(templatePrefix.length>1 && TEMPLATES_NAMESPACES_WITH_RENDERED.contains(templatePrefix[0]+":")) { //$NON-NLS-1$
 					result = true;
@@ -98,7 +95,7 @@ public class SourceDomUtil {
 		return result;
 	}
 	
-	public static Element getFacetByName(VpePageContext pageContext,
+	public static Element getFacetByName(VpeTemplateContext context,
 			Element sourceElement, String facetName) {
 		if (facetName == null) {
 			return null;
@@ -108,7 +105,7 @@ public class SourceDomUtil {
 		NodeList children = sourceElement.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
-			if (isFacetElement(pageContext, node)
+			if (isFacetElement(context, node)
 					&& facetName.equalsIgnoreCase( ((Element) node).getAttribute("name") )) { //$NON-NLS-1$
 				facetElement = (Element) node;
 			}
@@ -116,10 +113,10 @@ public class SourceDomUtil {
         return facetElement;
 	}
 	
-	public static boolean isFacetElement(VpePageContext pageContext, Node node) {
+	public static boolean isFacetElement(VpeTemplateContext context, Node node) {
 		if (node instanceof Element) {
 			String templateName = VpeTemplateManager.getInstance()
-					.getTemplateName(pageContext, node);
+					.getTemplateName(context, node);
 			return "f:facet".equals(templateName); //$NON-NLS-1$
 		} else {
 			return false;

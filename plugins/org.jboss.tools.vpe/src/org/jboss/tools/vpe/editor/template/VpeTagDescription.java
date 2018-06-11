@@ -10,21 +10,19 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.template;
 
-import org.jboss.tools.vpe.xulrunner.editor.IXulRunnerVpeResizer;
-
 public class VpeTagDescription {
 	public static final int DISPLAY_TYPE_NONE = 0;
 	public static final int DISPLAY_TYPE_BLOCK = 1;
 	public static final int DISPLAY_TYPE_INLINE = 2;
 
-	public static final int RESIZE_CONSTRAINS_TOPLEFT = IXulRunnerVpeResizer.RESIZER_MARKER_TOPLEFT;
-	public static final int RESIZE_CONSTRAINS_TOP = IXulRunnerVpeResizer.RESIZER_MARKER_TOP;
-	public static final int RESIZE_CONSTRAINS_TOPRIGHT = IXulRunnerVpeResizer.RESIZER_MARKER_TOPRIGHT;
-	public static final int RESIZE_CONSTRAINS_LEFT = IXulRunnerVpeResizer.RESIZER_MARKER_LEFT;
-	public static final int RESIZE_CONSTRAINS_RIGHT = IXulRunnerVpeResizer.RESIZER_MARKER_RIGHT;
-	public static final int RESIZE_CONSTRAINS_BOTTOMLEFT = IXulRunnerVpeResizer.RESIZER_MARKER_BOTTOMLEFT;
-	public static final int RESIZE_CONSTRAINS_BOTTOM = IXulRunnerVpeResizer.RESIZER_MARKER_BOTTOM;
-	public static final int RESIZE_CONSTRAINS_BOTTOMRIGHT = IXulRunnerVpeResizer.RESIZER_MARKER_BOTTOMRIGHT;
+	public static final int RESIZE_CONSTRAINS_TOPLEFT = 1;
+	public static final int RESIZE_CONSTRAINS_TOP = 2;
+	public static final int RESIZE_CONSTRAINS_TOPRIGHT = 4;
+	public static final int RESIZE_CONSTRAINS_LEFT = 8;
+	public static final int RESIZE_CONSTRAINS_RIGHT = 16;
+	public static final int RESIZE_CONSTRAINS_BOTTOMLEFT = 32;
+	public static final int RESIZE_CONSTRAINS_BOTTOM = 64;
+	public static final int RESIZE_CONSTRAINS_BOTTOMRIGHT = 128;
 
 	public static final int RESIZE_CONSTRAINS_NONE = 0;
 	public static final int RESIZE_CONSTRAINS_ALL = RESIZE_CONSTRAINS_TOPLEFT | RESIZE_CONSTRAINS_TOP | RESIZE_CONSTRAINS_TOPRIGHT | RESIZE_CONSTRAINS_LEFT | RESIZE_CONSTRAINS_RIGHT | RESIZE_CONSTRAINS_BOTTOMLEFT | RESIZE_CONSTRAINS_BOTTOM | RESIZE_CONSTRAINS_BOTTOMRIGHT;

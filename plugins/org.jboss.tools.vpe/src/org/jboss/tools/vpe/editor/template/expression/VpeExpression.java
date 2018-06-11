@@ -12,8 +12,8 @@ package org.jboss.tools.vpe.editor.template.expression;
 
 import org.w3c.dom.Node;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 
 public interface VpeExpression {
-	VpeValue exec(VpePageContext pageContext, Node sourceNode) throws VpeExpressionException;
+	VpeValue exec(VpeTemplateContext context, Node sourceNode) throws VpeExpressionException;
 }

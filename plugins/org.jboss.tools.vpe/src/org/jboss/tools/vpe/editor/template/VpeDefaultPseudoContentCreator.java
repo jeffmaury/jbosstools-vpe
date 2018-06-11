@@ -13,11 +13,10 @@ package org.jboss.tools.vpe.editor.template;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class VpeDefaultPseudoContentCreator extends VpePseudoContentCreator {
@@ -46,9 +45,10 @@ public class VpeDefaultPseudoContentCreator extends VpePseudoContentCreator {
 		return INSTANCE;
 	}
 
-	public void setPseudoContent(VpePageContext pageContext, Node sourceContainer, nsIDOMNode visualContainer, nsIDOMDocument visualDocument) {
+	@Override
+	public void setPseudoContent(VpeTemplateContext context, Node sourceContainer, Node visualContainer, Document visualDocument) {
 		if (!withoutPseudoContentSet.contains(visualContainer.getNodeName().toLowerCase())) {
-			nsIDOMElement visualPseudoElement = visualDocument.createElement(HTML.TAG_BR);
+			Element visualPseudoElement = visualDocument.createElement(HTML.TAG_BR);
 			setPseudoAttribute(visualPseudoElement);
 			visualContainer.appendChild(visualPseudoElement);
 		}

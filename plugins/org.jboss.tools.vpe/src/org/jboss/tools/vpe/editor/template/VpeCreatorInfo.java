@@ -15,14 +15,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.mozilla.interfaces.nsIDOMNode;
+import org.w3c.dom.Node;
+
 
 public class VpeCreatorInfo {
-	private nsIDOMNode visualNode;
+	private Node visualNode;
 	private List<VpeChildrenInfo> childrenInfoList;
 	private Set dependencySet;
 
-	VpeCreatorInfo(nsIDOMNode visualNode) {
+	VpeCreatorInfo(Node visualNode) {
 		this.visualNode = visualNode;
 	}
 	
@@ -30,7 +31,7 @@ public class VpeCreatorInfo {
 	 * Returns the built element of the visual tree.
 	 * @return The built element of the visual tree.
 	 */
-	nsIDOMNode getVisualNode() {
+	Node getVisualNode() {
 		return visualNode;
 	}
 	

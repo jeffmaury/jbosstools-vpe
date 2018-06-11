@@ -10,13 +10,11 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.template;
 
-import static org.jboss.tools.vpe.xulrunner.util.XPCOM.queryInterface;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.tools.vpe.editor.util.XmlUtil;
-import org.mozilla.interfaces.nsIDOMElement;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
@@ -24,10 +22,10 @@ import org.w3c.dom.Node;
  */
 
 public class VpeChildrenInfo {
-	private nsIDOMElement visualParent;
+	private Element visualParent;
 	private List<Node> sourceChildren;
 
-	public VpeChildrenInfo(nsIDOMElement visualParent) {
+	public VpeChildrenInfo(Element visualParent) {
 		this.visualParent = visualParent;
 	}
 	
@@ -35,7 +33,7 @@ public class VpeChildrenInfo {
 	 * Returns the container of the visual tree for adding new nodes.
 	 * @return The container of the visual tree for adding new nodes.
 	 */
-	public nsIDOMElement getVisualParent() {
+	public Element getVisualParent() {
 		return visualParent;
 	}
 	
@@ -70,7 +68,7 @@ public class VpeChildrenInfo {
 	public VpeChildrenInfo createCashCopy(){
 		
 		VpeChildrenInfo childrenInfo = new VpeChildrenInfo(visualParent != null
-				? queryInterface(XmlUtil.createClone(visualParent), nsIDOMElement.class)
+				? (Element)XmlUtil.createClone(visualParent)
 				: null);
 		childrenInfo.sourceChildren=this.sourceChildren;
 		return childrenInfo;

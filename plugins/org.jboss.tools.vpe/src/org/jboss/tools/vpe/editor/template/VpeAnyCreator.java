@@ -15,20 +15,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.tools.jst.web.ui.internal.editor.preferences.IVpePreferencesPage;
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionInfo;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.mozilla.interfaces.nsIDOMAttr;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 /**
@@ -156,21 +152,21 @@ public class VpeAnyCreator extends VpeAbstractCreator {
 		}
 	}
 	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) throws VpeExpressionException {
 		
-		String tagForDisplay =getExprValue(pageContext, tagForDisplayExpr, sourceNode);
+		String tagForDisplay =getExprValue(context, tagForDisplayExpr, sourceNode);
 		
 		if(tagForDisplay == null||tagForDisplay.length()==0) {
 			tagForDisplay = DEFAULT_TAG_FOR_DISPLAY;
 		}
 		
-		nsIDOMElement anyElement = visualDocument.createElement(tagForDisplay);
-		nsIDOMElement anyElementName = visualDocument.createElement(tagForDisplay);
+		Element anyElement = visualDocument.createElement(tagForDisplay);
+		Element anyElementName = visualDocument.createElement(tagForDisplay);
 		
 		VpeCreatorInfo creatorInfo = new VpeCreatorInfo(anyElement);
 
 		if(showIconBool){
-			nsIDOMElement img = visualDocument.createElement(HTML.TAG_IMG);
+			Element img = visualDocument.createElement(HTML.TAG_IMG);
 			img.setAttribute("src","any.gif");  //$NON-NLS-1$//$NON-NLS-2$
 			img.setAttribute("width","16"); //$NON-NLS-1$ //$NON-NLS-2$
 			img.setAttribute("height","16"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -179,7 +175,7 @@ public class VpeAnyCreator extends VpeAbstractCreator {
 		
 		anyElementName.setAttribute(HTML.ATTR_CLASS, CLASS_TAG_CAPTION);
 		
-		String styleString = getExprValue(pageContext, styleExpr, sourceNode);
+		String styleString = getExprValue(context, styleExpr, sourceNode);
 
 		/*
 		 * https://jira.jboss.org/jira/browse/JBIDE-4962
@@ -198,17 +194,17 @@ public class VpeAnyCreator extends VpeAbstractCreator {
 			for (int i = 0; i < propertyCreators.size(); i++) {
 				VpeCreator creator = (VpeCreator)propertyCreators.get(i);
 				if (creator != null) {
-					VpeCreatorInfo info = creator.create(pageContext, (Element) sourceNode, visualDocument, anyElementName, visualNodeMap);
+					VpeCreatorInfo info = creator.create(context, (Element) sourceNode, visualDocument, anyElementName, visualNodeMap);
 					if (info != null && info.getVisualNode() != null) {
-						nsIDOMAttr attr = (nsIDOMAttr)info.getVisualNode();
+						Attr attr = (Attr)info.getVisualNode();
 						anyElementName.setAttributeNode(attr);
 					}
 				}
 			}
 		}
 
-		String valueStr = getExprValue(pageContext, valueExpr, sourceNode);
-		nsIDOMNode valueNode = visualDocument.createTextNode(valueStr);
+		String valueStr = getExprValue(context, valueExpr, sourceNode);
+		Node valueNode = visualDocument.createTextNode(valueStr);
 		/*
 		 * 'Any tag name' will be placed in the first child of the root visual element.
 		 * If there are other children -- they'll be placed after tag's name
@@ -276,11 +272,11 @@ public class VpeAnyCreator extends VpeAbstractCreator {
 				);
 	}
 
-	private String getExprValue(VpePageContext pageContext, VpeExpression expr, Node sourceNode) {
+	private String getExprValue(VpeTemplateContext context, VpeExpression expr, Node sourceNode) {
 		String value;
 		if (expr != null) {
 			try {
-				value = expr.exec(pageContext, sourceNode).stringValue();
+				value = expr.exec(context, sourceNode).stringValue();
 			} catch (VpeExpressionException e) {
 				
 					VpeExpressionException exception = new VpeExpressionException(sourceNode.toString()+" "+expr.toString(),e); //$NON-NLS-1$

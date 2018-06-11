@@ -10,9 +10,8 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.template;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 public class VpeEmptyPseudoContentCreator extends VpePseudoContentCreator {
@@ -26,6 +25,7 @@ public class VpeEmptyPseudoContentCreator extends VpePseudoContentCreator {
 		return INSTANCE;
 	}
 
-	public void setPseudoContent(VpePageContext pageContext, Node sourceContainer, nsIDOMNode visualContainer, nsIDOMDocument visualDocument) {
+	@Override
+	public void setPseudoContent(VpeTemplateContext context, Node sourceContainer, Node visualContainer, Document visualDocument) {
 	}
 }

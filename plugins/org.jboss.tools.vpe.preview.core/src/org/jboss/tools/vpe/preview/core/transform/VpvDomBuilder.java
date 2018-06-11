@@ -135,8 +135,7 @@ public class VpvDomBuilder {
 	private Document createDocument() throws ParserConfigurationException {
 		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-		Document document = documentBuilder.newDocument();
-		return document;
+		return documentBuilder.newDocument();
 	}
 	
 	private static long getNextMarkerId() {

@@ -12,11 +12,9 @@ package org.jboss.tools.vpe.editor.template;
 
 import java.util.Map;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -28,7 +26,7 @@ public class VpeFacetCreator extends VpeAbstractCreator {
 	}
 
 	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) {
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) {
 		VpeCreatorInfo creatorInfo = null;
 		
 		boolean isHeader = false;
@@ -45,7 +43,7 @@ public class VpeFacetCreator extends VpeAbstractCreator {
 			Node sourceParent = sourceNode.getParentNode();
 			if (sourceParent != null) {
 
-				nsIDOMElement cell = null;
+				Element cell = null;
 				int columnsCount = getColumnsCount(sourceParent);
 				if (isHeader) {
 					cell = makeCell(columnsCount, HTML.TAG_TH, visualDocument);
@@ -65,23 +63,7 @@ public class VpeFacetCreator extends VpeAbstractCreator {
 		return creatorInfo;
 	}
 
-
-
-	/* (non-Javadoc)
-	 * @see org.jboss.tools.vpe.editor.template.VpeAbstractCreator#isRecreateAtAttrChange(org.jboss.tools.vpe.editor.context.VpePageContext, org.w3c.dom.Element, org.mozilla.interfaces.nsIDOMDocument, org.mozilla.interfaces.nsIDOMNode, java.lang.Object, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public boolean isRecreateAtAttrChange(VpePageContext pageContext,
-			Element sourceElement, nsIDOMDocument visualDocument,
-			nsIDOMNode visualNode, Object data, String name, String value) {
-		return true;
-	}
-
-	public Node getNodeForUpdate(VpePageContext pageContext, Node sourceNode, Node visualNode, Map visualNodeMap) {
-		return sourceNode.getParentNode();
-	}
-
-	private void setCellClass(nsIDOMElement cell, String className) {
+	private void setCellClass(Element cell, String className) {
 		if (cell != null) {
 			if (className != null && className.trim().length() > 0) {
 				cell.setAttribute("class", className); //$NON-NLS-1$
@@ -112,8 +94,8 @@ public class VpeFacetCreator extends VpeAbstractCreator {
 		return count;
 	}
 
-	private nsIDOMElement makeCell(int columnCount, String cellTag, nsIDOMDocument visualDocument) {
-		nsIDOMElement visualCell = visualDocument.createElement(cellTag);
+	private Element makeCell(int columnCount, String cellTag, Document visualDocument) {
+		Element visualCell = visualDocument.createElement(cellTag);
 		if (columnCount > 1) {
 			visualCell.setAttribute("colspan", "" + columnCount); //$NON-NLS-1$ //$NON-NLS-2$
 		}

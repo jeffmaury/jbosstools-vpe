@@ -10,20 +10,13 @@
   ******************************************************************************/
 package org.jboss.tools.vpe.editor.template;
 
-import static org.jboss.tools.vpe.xulrunner.util.XPCOM.queryInterface;
-
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.jboss.tools.vpe.editor.util.VpeStyleUtil;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNamedNodeMap;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMNodeList;
-import org.mozilla.xpcom.XPCOMException;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * This abstract class is intended to provide a common way to implement templates
@@ -46,12 +39,12 @@ public abstract class VpeAbstractBodyTemplate extends VpeAbstractTemplate {
 	 */
 	abstract protected String getTargetAttributeName(String sourceAttributeName);
 	
-	public VpeCreationData create(VpePageContext pageContext, Node sourceNode,
-			nsIDOMDocument visualDocument) {
-		final nsIDOMElement body = getBody(visualDocument.getDocumentElement());
+	public VpeCreationData create(VpeTemplateContext context, Node sourceNode,
+			Document visualDocument) {
+		final Element body = getBody(visualDocument.getDocumentElement());
 		cleanBody(body);
 
-		final nsIDOMElement div = visualDocument.createElement(HTML.TAG_DIV);
+		final Element div = visualDocument.createElement(HTML.TAG_DIV);
 		final NamedNodeMap sourceNodeAttributes = sourceNode.getAttributes();
 		for (int i = 0; i < sourceNodeAttributes.getLength(); i++) {
 			final Node sourceAttribute = sourceNodeAttributes.item(i);
@@ -86,13 +79,13 @@ public abstract class VpeAbstractBodyTemplate extends VpeAbstractTemplate {
 	 * 
 	 * @param body BODY-element
 	 */
-	protected void cleanBody(final nsIDOMElement body) {
-		nsIDOMNamedNodeMap attributes = body.getAttributes();
+	protected void cleanBody(final Element body) {
+		NamedNodeMap attributes = body.getAttributes();
 
 		long len = attributes.getLength();
 		int j = 0;
 		for (int i = 0; i < len; i++) {
-			nsIDOMNode attr = attributes.item(j);
+			Node attr = attributes.item(j);
 			if (HTML.ATTR_ID.equalsIgnoreCase(attr.getNodeName())) {
 				j++;
 			} else {
@@ -107,16 +100,16 @@ public abstract class VpeAbstractBodyTemplate extends VpeAbstractTemplate {
 	 * @param node a visual node
 	 * @return the nearest child of {@code node} named {@code 'BODY'}
 	 */
-	protected static nsIDOMElement getBody(nsIDOMNode node) {
+	protected static Element getBody(Node node) {
 
-		final nsIDOMNodeList nodeChildren = node.getChildNodes();
+		final NodeList nodeChildren = node.getChildNodes();
 		for (int i = 0; i < nodeChildren.getLength(); i++) {
-			final nsIDOMNode nodeChild = nodeChildren.item(i);
+			final Node nodeChild = nodeChildren.item(i);
 			if (HTML.TAG_BODY.equalsIgnoreCase(nodeChild
 					.getNodeName())) {
-				return queryInterface(nodeChild, nsIDOMElement.class);
+				return (Element) nodeChild;
 			} else {
-				nsIDOMElement body = getBody(nodeChild);
+				Element body = getBody(nodeChild);
 				if (body != null) {
 					return body;
 				}
@@ -124,25 +117,5 @@ public abstract class VpeAbstractBodyTemplate extends VpeAbstractTemplate {
 		}
 
 		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean recreateAtAttrChange(VpePageContext pageContext,
-			Element sourceElement, nsIDOMDocument visualDocument,
-			nsIDOMElement visualNode, Object data, String name, String value) {
-		return true;
-	}
-
-	/**
-	 * Cleans the visual {@code BODY}-element before the source element is removed.
-	 */
-	@Override
-	public void beforeRemove(VpePageContext pageContext, Node sourceNode,
-			nsIDOMNode visualNode, Object data) {
-		final nsIDOMElement body = getBody(visualNode.getOwnerDocument().getDocumentElement());
-		cleanBody(body);
 	}
 }

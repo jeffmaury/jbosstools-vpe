@@ -10,7 +10,6 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.template;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,15 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.wst.sse.ui.internal.StructuredTextViewer;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMElement;
+import org.jboss.tools.common.resref.core.ResourceReference;
 import org.jboss.tools.common.xml.XMLUtilities;
 import org.jboss.tools.jst.web.tld.TaglibData;
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.VpeIncludeInfo;
 import org.jboss.tools.vpe.editor.template.custom.CustomTLDReference;
 import org.jboss.tools.vpe.editor.template.textformating.TextFormatingData;
 import org.jboss.tools.vpe.editor.util.Constants;
@@ -48,6 +51,32 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class VpeTemplateManager {
+	
+	public interface VpeTemplateContext {
+
+		IEditorPart getEditor();
+
+		StructuredTextViewer getStructuredTextViewer();
+
+		List<TaglibData> getIncludeTaglibs();
+
+		VpeIncludeInfo getCurrentIncludeInfo();
+
+		boolean isFileInIncludeStack(IStorage file);
+
+		Map<IStorage, Document> getIncludeDocuments();
+
+		void pushIncludeStack(VpeIncludeInfo vpeIncludeInfo);
+
+		ResourceReference getRuntimeAbsoluteFolder(IFile file);
+
+		ResourceReference getRuntimeRelativeFolder(IFile file);
+
+		void addAttributeInCustomElementsMap(String name, String value);
+
+		void markIncludeElement(Element visualNewElement);
+		
+	}
 	
 	private static final String EMPTY_VPE_TEMPLATES_AUTO 
 			= "templates/empty-vpe-templates-auto.xml"; //$NON-NLS-1$
@@ -337,42 +366,42 @@ public class VpeTemplateManager {
 		}
 	}
 	
-	public VpeTemplate getTemplate(VpePageContext pageContext, Node sourceNode, Set<?> dependencySet) {
-		VpeTemplate template = getTemplateImpl(pageContext, sourceNode, dependencySet);
+	public VpeTemplate getTemplate(VpeTemplateContext context, Node sourceNode, Set<?> dependencySet) {
+		VpeTemplate template = getTemplateImpl(context, sourceNode, dependencySet);
 		if (template != null) {
 			return template;
 		}
 		return this.defTemplate;
 	}
 
-	private VpeTemplate getTemplateImpl(VpePageContext pageContext, Node sourceNode, Set<?> dependencySet) {
+	private VpeTemplate getTemplateImpl(VpeTemplateContext context, Node sourceNode, Set<?> dependencySet) {
 		//Fix for JBIDE-4179, mareshkau
 		if((sourceNode instanceof Element) &&
-				SourceDomUtil.isRenderedAttrEqFalse(pageContext,(Element) sourceNode)){
+				SourceDomUtil.isRenderedAttrEqFalse(context, (Element) sourceNode)){
 			return  VpeRenderingTemplate.getInstance();
 		}
 		
-		String name = getTemplateName(pageContext, sourceNode);
+		String name = getTemplateName(context, sourceNode);
 		if (name == null) {
 			return null;
 		}
 		//added by Maksim Areshkau, as fix for docbook templates
 		//see JBIDE-6600
 		VpeTemplateSet set=null;
-		if(DOCBOOKEDITORID.equals(pageContext.getEditPart().getSite().getId())){
+		if(DOCBOOKEDITORID.equals(context.getEditor().getSite().getId())) {
 			set = docbookTags.get(name);
 			if (set != null) {
-				return set.getTemplate(pageContext, sourceNode, dependencySet);
+				return set.getTemplate(context, sourceNode, dependencySet);
 			}
 		}
 		
 		set = caseSensitiveTags.get(name);
 		if (set != null) {
-			return set.getTemplate(pageContext, sourceNode, dependencySet);
+			return set.getTemplate(context, sourceNode, dependencySet);
 		}
 		set = ignoreSensitiveTags.get(name.toLowerCase());
 		if (set != null) {
-			return set.getTemplate(pageContext, sourceNode, dependencySet);
+			return set.getTemplate(context, sourceNode, dependencySet);
 		}
 		//added by Denis Vinnichek, for tags which are defined with regexp
 		if (matchingTags.entrySet() != null) {
@@ -380,7 +409,7 @@ public class VpeTemplateManager {
 				if (name.matches(entry.getKey())) {
 					set = entry.getValue();
 					if (set != null) {
-						return set.getTemplate(pageContext, sourceNode, dependencySet);
+						return set.getTemplate(context, sourceNode, dependencySet);
 					}
 				}
 			}
@@ -395,7 +424,7 @@ public class VpeTemplateManager {
 	 * @param sourceNode
 	 * @return name of template
 	 */
-	public  String getTemplateName(VpePageContext pageContext, Node sourceNode) {
+	public  String getTemplateName(VpeTemplateContext context, Node sourceNode) {
 		
 		if(sourceNode==null) {
 			return null;
@@ -425,7 +454,7 @@ public class VpeTemplateManager {
 				return sourceNode.getNodeName();
 			}
 			
-			List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(sourceNode,pageContext);
+			List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(sourceNode, context);
 			
 			TaglibData sourceNodeTaglib = XmlUtil.getTaglibForPrefix(sourcePrefix, taglibs);		
 
@@ -443,7 +472,7 @@ public class VpeTemplateManager {
 			}
 			
 			if(sourceNodeUri!=null
-					&& CustomTLDReference.isExistInCustomTlds(pageContext,sourceNodeUri)) {
+					&& CustomTLDReference.isExistInCustomTlds(context,sourceNodeUri)) {
 				return VpeTemplateManager.CUSTOM_TEMPLATE_NAME;
 			}
 

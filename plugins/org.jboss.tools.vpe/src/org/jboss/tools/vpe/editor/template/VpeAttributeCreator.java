@@ -13,16 +13,15 @@ package org.jboss.tools.vpe.editor.template;
 import java.util.Map;
 
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionInfo;
 import org.jboss.tools.vpe.editor.template.expression.VpeValue;
-import org.mozilla.interfaces.nsIDOMAttr;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -47,15 +46,15 @@ public class VpeAttributeCreator extends VpeAbstractCreator {
 		}
 	}
 
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) throws VpeExpressionException {
 
 		if (expression != null) {
 			if (visualNodeMap != null) {
 				visualNodeMap.put(this, visualElement);
 			}
-			VpeValue vpeValue = expression.exec(pageContext, sourceNode);
+			VpeValue vpeValue = expression.exec(context, sourceNode);
 			if (vpeValue != null && vpeValue.stringValue().length() > 0) {
-				nsIDOMAttr newVisualAttribute = visualDocument.createAttribute(name);
+				Attr newVisualAttribute = visualDocument.createAttribute(name);
 				newVisualAttribute.setValue(vpeValue.stringValue());
 				return new VpeCreatorInfo(newVisualAttribute);
 			}			
@@ -63,19 +62,19 @@ public class VpeAttributeCreator extends VpeAbstractCreator {
 		return null;
 	}
 	
-	public void setAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name, String value) {
-		setValue(pageContext, sourceElement, visualNodeMap);
+	public void setAttribute(VpeTemplateContext context, Element sourceElement, Map visualNodeMap, String name, String value) {
+		setValue(context, sourceElement, visualNodeMap);
 	}
 
-	public void removeAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name) {
-		setValue(pageContext, sourceElement, visualNodeMap);
+	public void removeAttribute(VpeTemplateContext context, Element sourceElement, Map visualNodeMap, String name) {
+		setValue(context, sourceElement, visualNodeMap);
 	}
 	
-	private void setValue(VpePageContext pageContext, Element sourceElement, Map visualNodeMap) {
+	private void setValue(VpeTemplateContext context, Element sourceElement, Map visualNodeMap) {
 		try{
 		if (expression != null) {
-			nsIDOMElement visualElement = (nsIDOMElement) visualNodeMap.get(this);
-			VpeValue vpeValue = expression.exec(pageContext, sourceElement);
+			Element visualElement = (Element) visualNodeMap.get(this);
+			VpeValue vpeValue = expression.exec(context, sourceElement);
 			if (vpeValue != null && vpeValue.stringValue().length() > 0) {
 				visualElement.setAttribute(this.name, vpeValue.stringValue());
 			} else {

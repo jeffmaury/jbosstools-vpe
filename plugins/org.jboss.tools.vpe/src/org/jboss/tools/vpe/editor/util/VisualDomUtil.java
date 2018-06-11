@@ -10,8 +10,6 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.util;
 
-import static org.jboss.tools.vpe.xulrunner.util.XPCOM.queryInterface;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,26 +20,20 @@ import java.util.Set;
 
 import org.eclipse.swt.graphics.Point;
 import org.jboss.tools.jst.web.tld.TaglibData;
-import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
 import org.jboss.tools.vpe.editor.template.VpeChildrenInfo;
 import org.jboss.tools.vpe.editor.template.VpeCreationData;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMEvent;
-import org.mozilla.interfaces.nsIDOMMouseEvent;
-import org.mozilla.interfaces.nsIDOMNSRange;
-import org.mozilla.interfaces.nsIDOMNSUIEvent;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMNodeList;
-import org.mozilla.interfaces.nsIDOMRange;
-import org.mozilla.interfaces.nsISelection;
-import org.mozilla.xpcom.XPCOMException;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
+import org.w3c.dom.events.Event;
+import org.w3c.dom.events.MouseEvent;
+import org.w3c.dom.events.UIEvent;
+import org.w3c.dom.ranges.Range;
 
 
 public class VisualDomUtil {
@@ -77,9 +69,9 @@ public class VisualDomUtil {
 		escapedTags.add("f:selectItems"); //$NON-NLS-1$
 	}
 
-	static public nsIDOMNode getAncestorNode(nsIDOMNode visualNode, String tagName){
+	static public Node getAncestorNode(Node visualNode, String tagName){
 		if (tagName == null) return null;
-		nsIDOMNode element = visualNode;
+		Node element = visualNode;
 		while (true){
 			if (tagName.equalsIgnoreCase(element.getNodeName())) {
 				return element;
@@ -92,77 +84,56 @@ public class VisualDomUtil {
 		return null;
 	}
 
-	public static Point getMousePoint(nsIDOMMouseEvent mouseEvent) {
-		nsIDOMNSUIEvent uiEvent = queryInterface(mouseEvent, nsIDOMNSUIEvent.class);
-		return new Point(uiEvent.getPageX(), uiEvent.getPageY());
+	public static Point getMousePoint(MouseEvent mouseEvent) {
+		UIEvent uiEvent = mouseEvent;
+		return new Point(uiEvent.get, uiEvent.getPageY());
 	}
 	
-	public static long getChildCount(nsIDOMNode node) {
+	public static long getChildCount(Node node) {
 		long count = 0;
-		nsIDOMNodeList children = node.getChildNodes();
+		NodeList children = node.getChildNodes();
 		if (children != null) {
 			count = children.getLength();
 		}
 		return count;
 	}
 	
-	public static nsIDOMNode getChildNode(nsIDOMNode node, long index) {
-		nsIDOMNode child = null;
-		nsIDOMNodeList children = node.getChildNodes();
+	public static Node getChildNode(Node node, long index) {
+		Node child = null;
+		NodeList children = node.getChildNodes();
 		if (children != null && index >= 0 && index < children.getLength()) {
 			child = children.item(index);
 		}
 		return child;
 	}
 	
-	public static long getOffset(nsIDOMNode node) {
+	public static long getOffset(Node node) {
 		long offset = 0;
-		nsIDOMNode previousSibling = node;
+		Node previousSibling = node;
 		while ((previousSibling = previousSibling.getPreviousSibling()) != null) {
 			offset++;
 		}
 		return offset;
 	}
 	
-	public static nsIDOMNode getTargetNode(nsIDOMEvent event) {
-		return queryInterface(event.getTarget(), nsIDOMNode.class);
+	public static Node getTargetNode(Event event) {
+		return (Node) event.getTarget();
 	}
 	
-	public static boolean isSelectionContains(nsISelection selection, nsIDOMNode parent, int offset) {
-		if (selection.getIsCollapsed()) {
-			return false;
-		}
-		nsIDOMRange range = selection.getRangeAt(0);
-		boolean inSelection = isRangeContains(range, parent, offset);
-		if (inSelection) {
-			nsIDOMNode endContainer = (nsIDOMNode)range.getEndContainer();
-			if (endContainer.getNodeType() != Node.TEXT_NODE) {
-				int endOffset = range.getEndOffset();
-				inSelection = !(parent.equals(endContainer) && offset == endOffset);
-			}
-		}
-		return inSelection;
-	}
 
-	public static boolean isRangeContains(nsIDOMRange range, nsIDOMNode parent, int offset) {
-		nsIDOMNSRange domNSRange = queryInterface(range, nsIDOMNSRange.class);
-		boolean inRange = domNSRange.isPointInRange(parent, offset);
-		return inRange;
-	}
-	
 	/**
 	 * Appends all children of the {@code node} to its parent at the point before the {@code node}
 	 * and removes the {@code node} from the list of its parent's children.
 	 * 
 	 * @param node should be not null
 	 */
-	public static void replaceNodeByItsChildren(nsIDOMNode node) {
-		final nsIDOMNodeList subTableContainerChildren = node.getChildNodes();
-		final nsIDOMNode containerParent = node.getParentNode();
+	public static void replaceNodeByItsChildren(Node node) {
+		final NodeList subTableContainerChildren = node.getChildNodes();
+		final Node containerParent = node.getParentNode();
 		if (subTableContainerChildren != null) {
 			final int length = (int) subTableContainerChildren.getLength();
 			for (int i = 0; i < length; i++) {
-				final nsIDOMNode child = subTableContainerChildren.item(i);
+				final Node child = subTableContainerChildren.item(i);
 				node.removeChild(child);
 				containerParent.insertBefore(child, node);
 			}
@@ -179,7 +150,7 @@ public class VisualDomUtil {
      * Should be used mainly to set HTML STYLE attribute:
      *  {@code setSubAttribute(div, "STYLE", "width", "100%")} 
      */
-	public static void setSubAttribute(nsIDOMElement element,
+	public static void setSubAttribute(Element element,
 			String attributeName, String subAttributeName,
 			String subAttributeValue) {
 		String attributeValue = element.getAttribute(attributeName);
@@ -206,7 +177,7 @@ public class VisualDomUtil {
 	 * @param sourceNode the source node
 	 * @param visualElement the visual element
 	 */
-	public static void copyAttributes(Node sourceNode, nsIDOMElement visualElement) {
+	public static void copyAttributes(Node sourceNode, Element visualElement) {
 	    NamedNodeMap namedNodeMap = sourceNode.getAttributes();
 	    for (int i = 0; i < namedNodeMap.getLength(); i++) {
 	        Node attribute = namedNodeMap.item(i);
@@ -214,13 +185,8 @@ public class VisualDomUtil {
 	        try {
 	
 	            visualElement.setAttribute(attribute.getNodeName(), attribute.getNodeValue());
-	        } catch (XPCOMException ex) {
-	            // if error-code not equals error for incorrect name throws
-	            // exception
-	            // error code is NS_ERROR_DOM_INVALID_CHARACTER_ERR=0x80530005
-	            if (ex.errorcode != 2152923141L) {
+	        } catch (DOMException ex) {
 	                throw ex;
-	            }
 	            // else we ignore this exception
 	        }
 	    }
@@ -235,7 +201,7 @@ public class VisualDomUtil {
 	 * @param visualAttrName the resulting name of visual attribute 
 	 */
 	public static void copyAttribute(Element sourceElement, String sourceAttrName,
-			nsIDOMElement visualElement, String visualAttrName) {
+			Element visualElement, String visualAttrName) {
 		if (sourceElement.hasAttribute(sourceAttrName)) {
 			String attrValue = sourceElement.getAttribute(sourceAttrName);
 			visualElement.setAttribute(visualAttrName, attrValue);
@@ -249,7 +215,7 @@ public class VisualDomUtil {
 	 * @param visualElement the visual element
 	 * @param attributes list names of attributes which will copy
 	 */
-	public static void copyAttributes(Element sourceElement, nsIDOMElement visualElement, List<String> attributes) {
+	public static void copyAttributes(Element sourceElement, Element visualElement, List<String> attributes) {
 	    for (String attributeName : attributes) {
 	        copyAttribute(sourceElement, attributeName, visualElement, attributeName);
 	    }
@@ -263,7 +229,7 @@ public class VisualDomUtil {
 	 * @param sourceToVisualMap mapping for attributes' names.
 	 */
 	public static void copyAttributes(Element sourceElement,
-			nsIDOMElement visualElement, Map<String, String> sourceToVisualMap) {
+			Element visualElement, Map<String, String> sourceToVisualMap) {
 		for (Entry<String, String> sourceToVisual : sourceToVisualMap.entrySet()) {
 			String sourceAttrName = sourceToVisual.getKey();
 			String visualAttrName = sourceToVisual.getValue();
@@ -335,8 +301,8 @@ public class VisualDomUtil {
 	 * @author yradtsevich
 	 * @see #createBorderlessContainer(nsIDOMDocument, String)
 	 */
-	public static nsIDOMElement createBorderlessContainer(
-			nsIDOMDocument visualDocument) {
+	public static Element createBorderlessContainer(
+			Document visualDocument) {
 		return createBorderlessContainer(visualDocument, HTML.TAG_SPAN);
 	}
 	
@@ -349,9 +315,9 @@ public class VisualDomUtil {
 	 * 
 	 * @return created borderless container
 	 */
-	public static nsIDOMElement createBorderlessContainer(
-			nsIDOMDocument visualDocument, String containerName) {
-		nsIDOMElement element = visualDocument.createElement(containerName);
+	public static Element createBorderlessContainer(
+			Document visualDocument, String containerName) {
+		Element element = visualDocument.createElement(containerName);
 	    element.setAttribute(HTML.ATTR_CLASS, HTML.CLASS_VPE_TEXT);
 		return element;
 	}
@@ -366,8 +332,8 @@ public class VisualDomUtil {
 	 * @param visualDocument the visual document, cannot be {@code null}
 	 */
 	public static void appendChildrenInsertionPoint(Element source,
-			nsIDOMElement target, VpeCreationData creationData, nsIDOMDocument visualDocument) {
-		nsIDOMElement childrenContainer = createBorderlessContainer(visualDocument);
+			Element target, VpeCreationData creationData, Document visualDocument) {
+		Element childrenContainer = createBorderlessContainer(visualDocument);
 		target.appendChild(childrenContainer);
 		
 		VpeChildrenInfo childrenInfo = new VpeChildrenInfo(childrenContainer);
@@ -395,8 +361,8 @@ public class VisualDomUtil {
 	 *         or template container.
 	 */
 	public static VpeCreationData createTemplateWithTextContainer(
-			Element sourceElement, nsIDOMElement templateContainer,
-			String borderlessContainerName, nsIDOMDocument visualDocument) {
+			Element sourceElement, Element templateContainer,
+			String borderlessContainerName, Document visualDocument) {
 		List<Node> children = new ArrayList<Node>();
 		VpeCreationData creationData = null;
         NodeList nodeList = sourceElement.getChildNodes();
@@ -412,8 +378,8 @@ public class VisualDomUtil {
             }
         }
 		if (children != null && children.size() > 0) {
-	        nsIDOMElement topContainer = createBorderlessContainer(visualDocument, borderlessContainerName);
-	        nsIDOMElement textContainer = createBorderlessContainer(visualDocument, borderlessContainerName);
+	        Element topContainer = createBorderlessContainer(visualDocument, borderlessContainerName);
+	        Element textContainer = createBorderlessContainer(visualDocument, borderlessContainerName);
 			topContainer.appendChild(textContainer);
 			topContainer.appendChild(templateContainer);
 			creationData = new VpeCreationData(topContainer);
@@ -436,22 +402,15 @@ public class VisualDomUtil {
  	 * @param facetName facet's name to compare to 'VPE-FACET' attribute value.
  	 * @return found visual tag or 'null' otherwise.
  	 */
-	public static nsIDOMElement findVisualTagWithFacetAttribute(
-			nsIDOMNode facetsParentNode, String facetName) {
+	public static Element findVisualTagWithFacetAttribute(
+			Node facetsParentNode, String facetName) {
 		
-     	nsIDOMElement tagForFacet = null;
+     	Element tagForFacet = null;
      	if (null != facetsParentNode) {
-     		nsIDOMNodeList nodeList = facetsParentNode.getChildNodes();
+     		NodeList nodeList = facetsParentNode.getChildNodes();
      		for (int i = 0; i < nodeList.getLength(); i++) {
-     			nsIDOMElement element = null;
-     			try {
-     				element = queryInterface(nodeList.item(i), nsIDOMElement.class);
-     			} catch (org.mozilla.xpcom.XPCOMException e) {
-     				/*
-     				 * Cannot parse node to element, return null.
-     				 */
-     				return null;
-     			}
+     			Element element = null;
+     				element = (Element) nodeList.item(i);
      			/*
      			 * If current tag has 'VPE-FACET' attribute 
      			 * with the corresponding  facet name.
@@ -496,10 +455,10 @@ public class VisualDomUtil {
  	 *  <P> 'FACET-HTML-TAG' - for HTML elements and plain text
  	 * 
  	 * @param facet the facet
- 	 * @param pageContext the page context 
+ 	 * @param context the page context 
  	 * @return map with arranged elements or empty map if nothing was found.
  	 */
-     public static Map<String, List<Node>> findFacetElements(Node facet, VpePageContext pageContext) {
+     public static Map<String, List<Node>> findFacetElements(Node facet, VpeTemplateContext context) {
     	Map<String, List<Node>> facetChildren = new HashMap<String, List<Node>>();
      	List<Node> jsfTag = new ArrayList<Node>(0);
      	List<Node> oddTags = new ArrayList<Node>(0);
@@ -514,7 +473,7 @@ public class VisualDomUtil {
      			Node child = children.item(i);
      			String sourcePrefix = child.getPrefix();
      			List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(child,
-     					pageContext);
+     					context);
      			TaglibData sourceNodeTaglib = XmlUtil.getTaglibForPrefix(
      					sourcePrefix, taglibs);
      			/*
@@ -579,8 +538,8 @@ public class VisualDomUtil {
 	 * @param potentialAscendant must not be {@code null}
 	 * @param potentialDescendant may be {@code null}
 	 */
-	public static boolean isAscendant(nsIDOMNode potentialAscendant,
-			nsIDOMNode potentialDescendant) {
+	public static boolean isAscendant(Node potentialAscendant,
+			Node potentialDescendant) {
 		while (potentialDescendant != null) {
 			potentialDescendant = potentialDescendant.getParentNode();
 			if (potentialAscendant.equals(potentialDescendant)) {

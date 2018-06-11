@@ -12,15 +12,10 @@ package org.jboss.tools.vpe.editor.template;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IStorage;
-import org.eclipse.jface.text.IRegion;
-import org.eclipse.jface.text.Region;
-import org.jboss.tools.jst.web.ui.internal.editor.util.NodesManagingUtil;
 import org.jboss.tools.vpe.editor.VpeIncludeInfo;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.custom.CustomTLDReference;
 import org.jboss.tools.vpe.editor.template.custom.VpeCustomStringStorage;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,44 +37,40 @@ public class VpeCustomTemplate extends VpeIncludeTemplate {
 	 * org.mozilla.interfaces.nsIDOMDocument)
 	 */
 	@Override
-	public VpeCreationData create(VpePageContext pageContext, Node sourceNode,
-			nsIDOMDocument visualDocument) {
+	public VpeCreationData create(VpeTemplateContext context, Node sourceNode,
+			Document visualDocument) {
 
-		IStorage sourceFileStorage = getCustomTemplateStorage(pageContext, sourceNode);
+		IStorage sourceFileStorage = getCustomTemplateStorage(context, sourceNode);
 	
 		if (sourceFileStorage instanceof IFile) {
 			//add attributes to EL list
 			IFile file =(IFile) sourceFileStorage;
 			if (file.exists()) {
-				if (!pageContext.getVisualBuilder().isFileInIncludeStack(
+				if (!context.isFileInIncludeStack(
 						file)) {
-					Document document = pageContext.getVisualBuilder()
-							.getIncludeDocuments().get(file);
+					Document document = context.getIncludeDocuments().get(file);
 					if (document == null) {
 						document = VpeCreatorUtil.getDocumentForRead(file);
 						if (document != null)
-							pageContext.getVisualBuilder()
-									.getIncludeDocuments().put(file, document);
+							context.getIncludeDocuments().put(file, document);
 					}
 					if (document != null) {
-						return createCreationData(pageContext, sourceNode, file, document, visualDocument);
+						return createCreationData(context, sourceNode, file, document, visualDocument);
 					}
 				}
 			}
 		}else if(sourceFileStorage instanceof VpeCustomStringStorage) {
 			VpeCustomStringStorage customStringStorage = (VpeCustomStringStorage) sourceFileStorage;
-			if (!pageContext.getVisualBuilder().isFileInIncludeStack(
+			if (!context.isFileInIncludeStack(
 					customStringStorage)) {
-				Document document = pageContext.getVisualBuilder()
-						.getIncludeDocuments().get(customStringStorage);
+				Document document = context.getIncludeDocuments().get(customStringStorage);
 				if (document == null) {
 					document = VpeCreatorUtil.getDocumentForRead(customStringStorage.getContentString());
 					if (document != null)
-						pageContext.getVisualBuilder()
-								.getIncludeDocuments().put(customStringStorage, document);
+						context.getIncludeDocuments().put(customStringStorage, document);
 				}
 				if (document != null) {
-					return createCreationData(pageContext, sourceNode, customStringStorage, document, visualDocument);
+					return createCreationData(context, sourceNode, customStringStorage, document, visualDocument);
 				}
 			}
 		}
@@ -89,30 +80,21 @@ public class VpeCustomTemplate extends VpeIncludeTemplate {
 		return creationData;
 	}
 	
-	private VpeCreationData createCreationData(VpePageContext pageContext,Node sourceNode,
+	private VpeCreationData createCreationData(VpeTemplateContext context,Node sourceNode,
 			IStorage storage,
-			Document document, nsIDOMDocument visualDocument) {
+			Document document, Document visualDocument) {
 		VpeCreationData creationData = createInclude(
 				document, visualDocument);
 
 			addAttributesToELExcpressions(
-										sourceNode, pageContext);
+										sourceNode, context);
 				creationData.setData(storage);
-		pageContext.getVisualBuilder().pushIncludeStack(
+		context.pushIncludeStack(
 				new VpeIncludeInfo((Element) sourceNode,
 						storage, document));
 		return creationData;
 	}
 	
-	@Override
-	public void validate(VpePageContext pageContext, Node sourceNode,
-			nsIDOMDocument visualDocument, VpeCreationData data){
-
-		pageContext.clearCustomElementAttributesMap();
-		
-		super.validate(pageContext, sourceNode, visualDocument, data);
-	}
-
 	/**
 	 * Temparary add to attribute for custom el expressions
 	 * @author mareshkau
@@ -123,47 +105,23 @@ public class VpeCustomTemplate extends VpeIncludeTemplate {
 	 * @return resourceReferences - unchanged resource references
 	 */
 	protected void addAttributesToELExcpressions(
-			final Node sourceNode, final VpePageContext vpePageContext){
+			final Node sourceNode, final VpeTemplateContext context){
 		NamedNodeMap attributesMap = sourceNode.getAttributes();
 
 		for(int i=0;i<attributesMap.getLength();i++) {
 			Attr attr = (Attr) attributesMap.item(i);
-			vpePageContext.addAttributeInCustomElementsMap(attr.getName(), attr.getValue());
+			context.addAttributeInCustomElementsMap(attr.getName(), attr.getValue());
 		}
 	}
 	
-	@Override
-	public void beforeRemove(VpePageContext pageContext, Node sourceNode,
-			nsIDOMNode visualNode, Object data) {
-		IFile file = null;
-		if(data instanceof IFile) {
-			file = (IFile) data;
-		}
-		super.beforeRemove(pageContext, sourceNode, visualNode, file);
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.jboss.tools.vpe.editor.template.VpeTemplate#getSourceRegionForOpenOn(org.mozilla.interfaces.nsIDOMNode)
-	 *
-	 */
-	/**
-	 * @author mareshkau
-	 */
-	@Override
-	public IRegion getSourceRegionForOpenOn(VpePageContext pageContext, Node sourceNode ,nsIDOMNode domNode) {
-			int offset = NodesManagingUtil.getStartOffsetNode(sourceNode);
-			//calculate openOnPosition,prefixLengght+>+":"
-			offset+=sourceNode.getPrefix().length()+1+1;
-			return new Region(offset, 0); 
-	}
 	/**
 	 * Culculate and returns storage to custom file
 	 * @author mareshkau
-	 * @param pageContext
+	 * @param context
 	 * @param sourceNode
 	 * @return
 	 */
-	protected IStorage getCustomTemplateStorage(VpePageContext pageContext, Node sourceNode){
-		return CustomTLDReference.getCustomElementStorage(sourceNode, pageContext);
+	protected IStorage getCustomTemplateStorage(VpeTemplateContext context, Node sourceNode){
+		return CustomTLDReference.getCustomElementStorage(sourceNode, context);
 	}
 }

@@ -15,18 +15,15 @@ import java.io.IOException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.wst.sse.core.internal.provisional.IModelManager;
-import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.sse.core.internal.provisional.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.VpeIncludeInfo;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.jboss.tools.vpe.editor.template.custom.VpeCustomStringStorage;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.FileUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -83,8 +80,8 @@ public class VpeCreatorUtil {
 		return false;
 	}
 	
-	private static IDOMModel getWtpModelForRead(String fileName, VpePageContext pageContext) {
-		IEditorInput input = pageContext.getEditPart().getEditorInput();
+	private static IDOMModel getWtpModelForRead(String fileName, VpeTemplateContext context) {
+		IEditorInput input = context.getEditor().getEditorInput();
 		IFile file = FileUtil.getFile(input, fileName);
 		if (file != null && file.exists()) {
 			try {
@@ -98,7 +95,7 @@ public class VpeCreatorUtil {
 		return null;
 	}
 
-	public static Document getIncludeDocument(Node includeNode, VpePageContext pageContext) {
+	public static Document getIncludeDocument(Node includeNode, VpeTemplateContext context) {
 		if (isInclude(includeNode)) {
 			Element includeElement = (Element)includeNode;
 			String pageAttrName = "page"; //$NON-NLS-1$
@@ -110,7 +107,7 @@ public class VpeCreatorUtil {
 				pageName = includeElement.getAttribute(fileAttrName);
 			}
 			if (pageName != null) {
-				IDOMModel wtpModel = getWtpModelForRead(pageName, pageContext);
+				IDOMModel wtpModel = getWtpModelForRead(pageName, context);
 				if (wtpModel != null) {
 					return wtpModel.getDocument();												
 				}
@@ -132,15 +129,15 @@ public class VpeCreatorUtil {
 		}
 	}
 
-	public static IFile getFile(String fileName, VpePageContext pageContext) {
+	public static IFile getFile(String fileName, VpeTemplateContext context) {
 		if (null == fileName) {
 			return null;
 		}
-		IEditorInput input = pageContext.getEditPart().getEditorInput();
+		IEditorInput input = context.getEditor().getEditorInput();
 		IFile file = null;
 
 		VpeIncludeInfo currentIncludeInfo
-				= pageContext.getVisualBuilder().getCurrentIncludeInfo();
+				= context.getCurrentIncludeInfo();
 		if(currentIncludeInfo==null 
 				|| !(currentIncludeInfo.getStorage() instanceof IFile)) {
 			file = FileUtil.getFile(input, fileName);
@@ -204,18 +201,18 @@ public class VpeCreatorUtil {
 		return null;
 	}
 
-	public static int getFacetType(Node node, VpePageContext pageContext) {
+	public static int getFacetType(Node node, VpeTemplateContext context) {
 		if (VpeCreatorUtil.isFacet(node)) {
 			return getFacetType(node);
 		} else {
-			Document document = getIncludeDocument(node, pageContext);
+			Document document = getIncludeDocument(node, context);
 			if (document != null) {
 				try {
 					NodeList list = document.getChildNodes();
 					int cnt = list != null ? list.getLength() : 0;
 					for (int i = 0; i < cnt; i++) {
 						Node child = list.item(i);
-						int type = getFacetType(child, pageContext);
+						int type = getFacetType(child, context);
 						if (type != FACET_TYPE_NONE) {
 							return type;
 						}

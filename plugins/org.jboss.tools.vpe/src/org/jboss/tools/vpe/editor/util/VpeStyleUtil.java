@@ -10,8 +10,6 @@
  ******************************************************************************/
 package org.jboss.tools.vpe.editor.util;
 
-import static org.jboss.tools.vpe.xulrunner.util.XPCOM.queryInterface;
-
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -21,7 +19,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,24 +32,14 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.editors.text.ILocationProvider;
-import org.jboss.tools.common.model.XModel;
-import org.jboss.tools.common.model.project.IModelNature;
-import org.jboss.tools.common.model.util.EclipseResourceUtil;
 import org.jboss.tools.common.resref.core.ResourceReference;
 import org.jboss.tools.jst.web.WebUtils;
-import org.jboss.tools.jst.web.project.WebProject;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.VpeIncludeInfo;
-import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.jboss.tools.vpe.editor.mapping.VpeElementMapping;
-import org.mozilla.interfaces.nsIDOMCSSStyleDeclaration;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMElementCSSInlineStyle;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMNodeList;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.w3c.dom.css.CSSStyleDeclaration;
+import org.w3c.dom.css.ElementCSSInlineStyle;
 
 public class VpeStyleUtil {
 
@@ -105,9 +92,9 @@ public class VpeStyleUtil {
 	/**
 	 * Returns CSS style declaration corresponding to the given {@code element}.
 	 */
-	public static nsIDOMCSSStyleDeclaration getStyle(nsIDOMElement element) {
-    	nsIDOMElementCSSInlineStyle inlineStyle = 
-				queryInterface(element, nsIDOMElementCSSInlineStyle.class);
+	public static CSSStyleDeclaration getStyle(Element element) {
+    	ElementCSSInlineStyle inlineStyle = 
+				(ElementCSSInlineStyle)element;
 		return inlineStyle.getStyle();
 	}
 
@@ -443,15 +430,15 @@ public class VpeStyleUtil {
 	 * Adds full path for URL value
 	 * 
 	 * @param url the url
-	 * @param pageContext VPE page context
+	 * @param context VPE page context
 	 * @return the full path string
 	 */
-	public static String addFullPathIntoURLValue(String url, VpePageContext pageContext) {
+	public static String addFullPathIntoURLValue(String url, VpeTemplateContext context) {
 		String urls[] = url.split(ATTR_URL);
 		if (urls.length == 1) {
 			return url;
 		}
-		IFile file = getSourceFileFromPageContext(pageContext);
+		IFile file = getSourceFileFromPageContext(context);
 		for (int i = 1; i < urls.length; i++) {
 			urls[i] = removeQuotesUpdate(urls[i]);
 			String[] urlParts = splitURL(urls[i]);
@@ -584,7 +571,7 @@ public class VpeStyleUtil {
 	 * 
 	 * @param path
 	 *            image "src" attribute value
-	 * @param pageContext
+	 * @param context
 	 *            the pageContext
 	 * @param showUnresolvedImage
 	 *            flag to display unresolved image
@@ -592,7 +579,7 @@ public class VpeStyleUtil {
 	 * @return the full path to image "src" attribute
 	 */
 	public static String addFullPathToImgSrc(String path,
-			VpePageContext pageContext, boolean showUnresolvedImage) {
+			VpeTemplateContext context, boolean showUnresolvedImage) {
 
 		if (path == null) {
 			if (showUnresolvedImage) {
@@ -628,8 +615,8 @@ public class VpeStyleUtil {
 			return FILE_PROTOCOL + SLASH + SLASH + SLASH + locFile.getAbsolutePath().replace('\\', '/');
 		}
 
-		IPath imgPath = toFullPath(pageContext, tagPath);
-		IEditorInput input = pageContext.getEditPart().getEditorInput();
+		IPath imgPath = toFullPath(context, tagPath);
+		IEditorInput input = context.getEditor().getEditorInput();
 		if (imgPath != null && imgPath.toFile().exists()) {
 			return FILE_PROTOCOL + SLASH + SLASH + SLASH + imgPath.toString();
 		} else {
@@ -642,10 +629,10 @@ public class VpeStyleUtil {
 				ResourceReference resourceReference = null;
 				String pathCopy = path;
 				if (SLASH.equals(path.substring(0, 1))) {
-					resourceReference = pageContext.getRuntimeAbsoluteFolder(file);
+					resourceReference = context.getRuntimeAbsoluteFolder(file);
 					pathCopy = pathCopy.substring(1);
 				} else {
-					resourceReference = pageContext.getRuntimeRelativeFolder(file);
+					resourceReference = context.getRuntimeRelativeFolder(file);
 				}
 
 				String location = null;
@@ -672,8 +659,8 @@ public class VpeStyleUtil {
 		}
 	}
 
-	public static IPath toFullPath(VpePageContext pageContext, IPath path) {
-		IEditorInput input = pageContext.getEditPart().getEditorInput();
+	public static IPath toFullPath(VpeTemplateContext context, IPath path) {
+		IEditorInput input = context.getEditor().getEditorInput();
 		if (path.isAbsolute() && input instanceof IFileEditorInput) {
 			IFileEditorInput fileEditorInput = (IFileEditorInput) input;
 			IFile editorFile = fileEditorInput.getFile();
@@ -700,46 +687,6 @@ public class VpeStyleUtil {
 		return null;
 	}
 
-	/**
-	 * refresh style element
-	 * 
-	 * @param visualDomBuilder
-	 * @param sourceElement
-	 * @param oldStyleNode
-	 * @return
-	 */
-	public static void refreshStyleElement(VpeVisualDomBuilder visualDomBuilder, VpeElementMapping elementMapping) {
-		nsIDOMNode value = null;
-		/*
-		 * data property( of "style's" elementMapping ) contains Map<Object,nsIDOMNode>. 
-		 * There is only one "style" visual element in this map. So we get this element from map.
-		 * There is potential danger in this manner of keeping "style" element ( use property "data" of Object type )
-		 */
-		Map<Object, nsIDOMNode> map = (Map<Object, nsIDOMNode>) elementMapping.getData();
-		// get "style" element
-		if (map != null) {
-			if (map.size() > 0) {
-				value = map.values().iterator().next();
-			}
-		}
-		if (value == null) {
-			return;
-		}
-		// get new value of style element
-		Node textNode = elementMapping.getSourceNode().getFirstChild();
-		String text = null;
-		if (textNode != null) {
-			text = textNode.getNodeValue();
-		}
-		nsIDOMNodeList list = value.getChildNodes();
-		// remove all children of style element
-		for (int i = 0; i < list.getLength(); i++) {
-			value.removeChild(list.item(i));
-		}
-		// add new value of style element
-		value.appendChild(visualDomBuilder.getXulRunnerEditor()
-				.getDOMDocument().createTextNode(text));
-	}
 
 	public static String getAbsoluteResourcePath(String resourcePathInPlugin) {
 		String pluginPath = VpePlugin.getPluginResourcePath();
@@ -837,37 +784,17 @@ public class VpeStyleUtil {
 		return decodedUrl;
 	}
 
-	/**
-	 * Applies CSS attributes {@code left:x;top:y;} to the specified {@code element}.
-	 */
-	public static void moveElementTo(nsIDOMElement element, int x, int y) {
-		nsIDOMCSSStyleDeclaration style = VpeStyleUtil.getStyle(element);
-		style.setProperty(HTML.STYLE_PARAMETER_LEFT, VpeStyleUtil.toPxPosition(x), HTML.STYLE_PRIORITY_IMPORTANT);
-		style.setProperty(HTML.STYLE_PARAMETER_TOP, VpeStyleUtil.toPxPosition(y), HTML.STYLE_PRIORITY_IMPORTANT);
-	}
 
-	/**
-	 * Applies CSS attribute {@code display} to the specified {@code element} according to the {@code visible}
-	 * parameter.
-	 */
-	public static void setElementVisible(nsIDOMElement element, boolean visible) {
-		nsIDOMCSSStyleDeclaration style = VpeStyleUtil.getStyle(element);
-		style.setProperty(HTML.STYLE_PARAMETER_DISPLAY,
-				visible ? HTML.STYLE_VALUE_DEFAULT_DISPLAY
-						: HTML.STYLE_VALUE_NONE, HTML.STYLE_PRIORITY_IMPORTANT);
-
-	}
-	
 	/**
 	 * Finds CSS @import url(".."); construction
 	 * 
 	 * @param cssText the css text
-	 * @param pageContext VPE page context 
+	 * @param context VPE page context 
 	 * @return the map with the import statement as a key and the css file path as a value
 	 */
-	public static List<String> findCssImportConstruction(String cssText, VpePageContext pageContext) {
+	public static List<String> findCssImportConstruction(String cssText, VpeTemplateContext context) {
 		ArrayList<String> list = new ArrayList<String>();
-		IFile sourceFile = getSourceFileFromPageContext(pageContext);
+		IFile sourceFile = getSourceFileFromPageContext(context);
 		Matcher m = CSS_IMPORT_PATTERN.matcher(cssText);
 		while (m.find()) {
 			/*
@@ -881,12 +808,12 @@ public class VpeStyleUtil {
 	/**
 	 * Gets the source file from pageContext
 	 * 
-	 * @param pageContext
+	 * @param context
 	 * @return the opened file
 	 */
-	public static IFile getSourceFileFromPageContext(VpePageContext pageContext) {
+	public static IFile getSourceFileFromPageContext(VpeTemplateContext context) {
 		IFile file = null;
-		final VpeIncludeInfo vii = pageContext.getVisualBuilder().getCurrentIncludeInfo();
+		final VpeIncludeInfo vii = context.getCurrentIncludeInfo();
 		if ((vii != null) && (vii.getStorage() instanceof IFile)) {
 			file = (IFile) vii.getStorage();
 		}

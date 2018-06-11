@@ -13,15 +13,12 @@ package org.jboss.tools.vpe.editor.template;
 import java.util.Map;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.mozilla.interfaces.nsIDOMText;
+import org.w3c.dom.Text;
 
 public interface VpeOutputAttributes {
-	void setOutputAttributeValue(VpePageContext pageContext, Element sourceElement, Map visualNodeMap);
+	void setOutputAttributeValue(Element sourceElement, Map visualNodeMap);
 	String[] getOutputAttributes();
-	boolean isEditabledAtribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap);
-	void setOutputAttributeSelection(VpePageContext pageContext, Element sourceElement, int offset, int length, Map visualNodeMap);
-	nsIDOMText getOutputTextNode(VpePageContext pageContext, Element sourceElement, Map visualNodeMap);
+	boolean isEditabledAtribute(Element sourceElement, Map visualNodeMap);
+	void setOutputAttributeSelection(Element sourceElement, int offset, int length, Map visualNodeMap);
+	Text getOutputTextNode(Element sourceElement, Map visualNodeMap);
 }

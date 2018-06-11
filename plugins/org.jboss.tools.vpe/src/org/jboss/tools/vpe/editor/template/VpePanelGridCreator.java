@@ -17,6 +17,7 @@ import java.util.Map;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
 import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
@@ -31,6 +32,7 @@ import org.mozilla.interfaces.nsIDOMDocument;
 import org.mozilla.interfaces.nsIDOMElement;
 import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -169,11 +171,11 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 	}
 
 	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument,
-			nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument,
+			Element visualElement, Map visualNodeMap) throws VpeExpressionException {
 		int tableSize = 1;
 		if (tableSizeExpr != null) {
-			VpeValue vpeValue = tableSizeExpr.exec(pageContext, sourceNode);
+			VpeValue vpeValue = tableSizeExpr.exec(context, sourceNode);
 			if (vpeValue != null) {
 				String strValue = vpeValue.stringValue();
 				try {
@@ -186,17 +188,17 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 			}
 		}
 
-		nsIDOMElement visualTable = visualDocument.createElement(HTML.TAG_TABLE);
+		Element visualTable = visualDocument.createElement(HTML.TAG_TABLE);
 		VpeCreatorInfo creatorInfo = new VpeCreatorInfo(visualTable);
 
 		if (propertyCreators != null) {
 			for (int i = 0; i < propertyCreators.size(); i++) {
 				VpeCreator creator = (VpeCreator) propertyCreators.get(i);
 				if (creator != null) {
-					VpeCreatorInfo info = creator.create(pageContext, sourceNode, visualDocument, visualTable,
+					VpeCreatorInfo info = creator.create(context, sourceNode, visualDocument, visualTable,
 							visualNodeMap);
 					if (info != null && info.getVisualNode() != null) {
-						nsIDOMAttr attr = (nsIDOMAttr) info.getVisualNode();
+						Attr attr = (Attr) info.getVisualNode();
 						visualTable.setAttributeNode(attr);
 					}
 				}
@@ -204,7 +206,7 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 		}
 
 		if (rulesExpr != null) {
-			String rules = rulesExpr.exec(pageContext, sourceNode).stringValue();
+			String rules = rulesExpr.exec(context, sourceNode).stringValue();
 			if (rules.length() > 0)
 				visualTable.setAttribute(VpeTemplateManager.ATTR_PANELGRID_RULES, rules);
 		}
@@ -222,7 +224,7 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 				if ((type == Node.ELEMENT_NODE)
 						|| ((type == Node.TEXT_NODE) && (node.getNodeValue() != null) && (node.getNodeValue().trim()
 								.length() > 0))) {
-					switch (VpeCreatorUtil.getFacetType(node, pageContext)) {
+					switch (VpeCreatorUtil.getFacetType(node, context)) {
 					case VpeCreatorUtil.FACET_TYPE_HEADER:
 						header = node;
 						break;
@@ -247,9 +249,9 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 				Map<String, List<Node>> captionFacetChildren = null;
 				Map<String, List<Node>> headerFacetChildren = null;
 				Map<String, List<Node>> footerFacetChildren = null;
-				captionFacetChildren = VisualDomUtil.findFacetElements(caption, pageContext);
-				headerFacetChildren = VisualDomUtil.findFacetElements(header, pageContext);
-				footerFacetChildren = VisualDomUtil.findFacetElements(footer, pageContext);
+				captionFacetChildren = VisualDomUtil.findFacetElements(caption, context);
+				headerFacetChildren = VisualDomUtil.findFacetElements(header, context);
+				footerFacetChildren = VisualDomUtil.findFacetElements(footer, context);
 				/*
 				 * Add additional table cell for odd facet's elements.
 				 */
@@ -267,9 +269,9 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 				}
 				int rowCount = (childrenCount + tableSize - 1) / tableSize;
 
-				nsIDOMElement visualHead = null;
-				nsIDOMElement visualFoot = null;
-				nsIDOMElement visualCaption = null;
+				Element visualHead = null;
+				Element visualFoot = null;
+				Element visualCaption = null;
 
 				if (caption != null) {
 					visualCaption = visualDocument.createElement(HTML.TAG_CAPTION);
@@ -278,12 +280,12 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 					childrenInfo.addSourceChild(caption);
 					creatorInfo.addChildrenInfo(childrenInfo);
 					if (captionClassExpr != null && caption.getParentNode() != null) {
-						String captionClass = captionClassExpr.exec(pageContext, caption.getParentNode()).stringValue();
+						String captionClass = captionClassExpr.exec(context, caption.getParentNode()).stringValue();
 						visualCaption.setAttribute(HTML.ATTR_CLASS, captionClass);
 					}
 
 					if (captionStyleExpr != null && caption.getParentNode() != null) {
-						String captionStyle = captionStyleExpr.exec(pageContext, caption.getParentNode()).stringValue();
+						String captionStyle = captionStyleExpr.exec(context, caption.getParentNode()).stringValue();
 						visualCaption.setAttribute(HTML.ATTR_STYLE, captionStyle);
 					}
 				}
@@ -296,18 +298,18 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 					visualTable.appendChild(visualFoot);
 				}
 
-				nsIDOMElement visualBody = visualDocument.createElement(HTML.TAG_TBODY);
+				Element visualBody = visualDocument.createElement(HTML.TAG_TBODY);
 				visualTable.appendChild(visualBody);
 
-				List<String> rowClasses = VpeClassUtil.getClasses(rowClassesExpr, sourceNode, pageContext);
-				List<String> columnClasses = VpeClassUtil.getClasses(columnClassesExpr, sourceNode, pageContext);
+				List<String> rowClasses = VpeClassUtil.getClasses(rowClassesExpr, sourceNode, context);
+				List<String> columnClasses = VpeClassUtil.getClasses(columnClassesExpr, sourceNode, context);
 
 				int rci = 0; // index of row class
 				for (int i = 0; i < rowCount; i++) {
 					int cci = 0; // index of column class. Reset on every new
 									// row.
 
-					nsIDOMElement visualRow = visualDocument.createElement(HTML.TAG_TR);
+					Element visualRow = visualDocument.createElement(HTML.TAG_TR);
 					if (!rowClasses.isEmpty()) {
 						visualRow.setAttribute(HTML.ATTR_CLASS, rowClasses.get(rci).toString());
 						rci++;
@@ -319,7 +321,7 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 						if (i * tableSize + j >= childrenCount) {
 							break;
 						}
-						nsIDOMElement visualCell = visualDocument.createElement(HTML.TAG_TD);
+						Element visualCell = visualDocument.createElement(HTML.TAG_TD);
 						if (!columnClasses.isEmpty()) {
 							visualCell.setAttribute(HTML.ATTR_CLASS, columnClasses.get(cci).toString());
 							cci++;
@@ -384,17 +386,17 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 					}
 				}
 				makeSpecial(header, "header", visualHead, visualDocument, tableSize, //$NON-NLS-1$
-						creatorInfo, HTML.TAG_TH, headerClassExpr, pageContext);
+						creatorInfo, HTML.TAG_TH, headerClassExpr, context);
 				makeSpecial(footer, "footer", visualFoot, visualDocument, tableSize, //$NON-NLS-1$
-						creatorInfo, HTML.TAG_TD, footerClassExpr, pageContext);
+						creatorInfo, HTML.TAG_TD, footerClassExpr, context);
 
 				for (int i = 0; i < propertyCreators.size(); i++) {
 					VpeCreator creator = (VpeCreator) propertyCreators.get(i);
 					if (creator != null) {
-						VpeCreatorInfo info = creator.create(pageContext, sourceNode, visualDocument, visualTable,
+						VpeCreatorInfo info = creator.create(context, sourceNode, visualDocument, visualTable,
 								visualNodeMap);
 						if (info != null && info.getVisualNode() != null) {
-							nsIDOMAttr attr = (nsIDOMAttr) info.getVisualNode();
+							Attr attr = (Attr) info.getVisualNode();
 							if (attr.getValue().length() > 0) {
 								visualTable.setAttributeNode(attr);
 							}
@@ -407,16 +409,16 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 		return creatorInfo;
 	}
 
-	private void makeSpecial(Node facet, String facetName, nsIDOMElement visualHead, nsIDOMDocument visualDocument,
+	private void makeSpecial(Node facet, String facetName, Element visualHead, Document visualDocument,
 			int tableSize, VpeCreatorInfo creatorInfo, String cellTag, VpeExpression headerClassExpr,
-			VpePageContext pageContext) throws VpeExpressionException {
+			VpeTemplateContext context) throws VpeExpressionException {
 		if (facet != null && visualHead != null) {
-			nsIDOMElement visualRow = visualDocument.createElement(HTML.TAG_TR);
+			Element visualRow = visualDocument.createElement(HTML.TAG_TR);
 			visualHead.appendChild(visualRow);
-			nsIDOMElement visualCell = visualDocument.createElement(cellTag);
+			Element visualCell = visualDocument.createElement(cellTag);
 			visualCell.setAttribute(HTML.ATTR_COLSPAN, "" + tableSize); //$NON-NLS-1$
 			if (headerClassExpr != null && facet.getParentNode() != null) {
-				String headerClass = headerClassExpr.exec(pageContext, facet.getParentNode()).stringValue();
+				String headerClass = headerClassExpr.exec(context, facet.getParentNode()).stringValue();
 				visualCell.setAttribute(HTML.ATTR_CLASS, headerClass);
 			}
 			visualRow.appendChild(visualCell);
@@ -425,35 +427,6 @@ public class VpePanelGridCreator extends VpeAbstractCreator {
 			creatorInfo.addChildrenInfo(childrenInfo);
 			visualCell.setAttribute(VpeVisualDomBuilder.VPE_FACET, facetName);
 		}
-	}
-
-	private Node getFirstChildElement(Node parentNode) {
-		if (parentNode != null) {
-			NodeList childrens = parentNode.getChildNodes();
-			int length = childrens != null ? childrens.getLength() : 0;
-			for (int i = 0; i < length; i++) {
-				Node child = childrens.item(i);
-				if (child.getNodeType() == Node.ELEMENT_NODE) {
-					return child;
-				}
-			}
-		}
-		return null;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.tools.vpe.editor.template.VpeAbstractCreator#isRecreateAtAttrChange
-	 * (org.jboss.tools.vpe.editor.context.VpePageContext, org.w3c.dom.Element,
-	 * org.mozilla.interfaces.nsIDOMDocument, org.mozilla.interfaces.nsIDOMNode,
-	 * java.lang.Object, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public boolean isRecreateAtAttrChange(VpePageContext pageContext, Element sourceElement,
-			nsIDOMDocument visualDocument, nsIDOMNode visualNode, Object data, String name, String value) {
-		return true;
 	}
 
 }

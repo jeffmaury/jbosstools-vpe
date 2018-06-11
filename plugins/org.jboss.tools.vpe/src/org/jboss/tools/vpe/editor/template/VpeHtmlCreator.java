@@ -14,13 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
-import org.mozilla.interfaces.nsIDOMAttr;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -79,13 +76,14 @@ public class VpeHtmlCreator extends VpeAbstractCreator {
 		}
 	}
 
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
-		nsIDOMElement visualNewElement = visualDocument.createElement(name);
+	@Override
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) throws VpeExpressionException {
+		Element visualNewElement = visualDocument.createElement(name);
 		if (attrs != null) {
 			for (int i = 0; i < attrs.length; i++) {
-				VpeCreatorInfo attributeInfo = attrs[i].create(pageContext, (Element) sourceNode, visualDocument, visualNewElement, visualNodeMap);
+				VpeCreatorInfo attributeInfo = attrs[i].create(context, (Element) sourceNode, visualDocument, visualNewElement, visualNodeMap);
 				if (attributeInfo != null) {
-					nsIDOMAttr newVisualAttribute = (nsIDOMAttr)attributeInfo.getVisualNode();
+					Attr newVisualAttribute = (Attr)attributeInfo.getVisualNode();
 					if (newVisualAttribute != null) {
 						visualNewElement.setAttributeNode(newVisualAttribute);
 					}
@@ -94,9 +92,9 @@ public class VpeHtmlCreator extends VpeAbstractCreator {
 		}
 		if (nodes != null) {
 			for (int i = 0; i < nodes.length; i++) {
-				VpeCreatorInfo nodeInfo = nodes[i].create(pageContext, sourceNode, visualDocument, visualNewElement, visualNodeMap);
+				VpeCreatorInfo nodeInfo = nodes[i].create(context, sourceNode, visualDocument, visualNewElement, visualNodeMap);
 				if (nodeInfo != null) {
-					nsIDOMNode newVisualNode = nodeInfo.getVisualNode();
+					Node newVisualNode = nodeInfo.getVisualNode();
 					if (newVisualNode != null) {
 						visualNewElement.appendChild(newVisualNode);
 					}

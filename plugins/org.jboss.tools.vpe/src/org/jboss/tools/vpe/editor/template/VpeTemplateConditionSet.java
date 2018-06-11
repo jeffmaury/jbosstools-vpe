@@ -15,7 +15,7 @@ import java.util.Set;
 import org.w3c.dom.Node;
 
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
@@ -41,22 +41,22 @@ public class VpeTemplateConditionSet extends VpeTemplateSet {
 		}
 	}
 
-	VpeTemplate getTemplate(VpePageContext pageContext, Node sourceNode, Set ifDependencySet) {
+	VpeTemplate getTemplate(VpeTemplateContext context, Node sourceNode, Set ifDependencySet) {
 		if (dependencySet != null) {
 			ifDependencySet.addAll(dependencySet);
 		}
-		if (!test(pageContext, sourceNode)) {
+		if (!test(context, sourceNode)) {
 			return null;
 		}
-		return super.getTemplate(pageContext, sourceNode, dependencySet);
+		return super.getTemplate(context, sourceNode, dependencySet);
 	}
 	
-	private boolean test(VpePageContext pageContext, Node sourceNode) {
+	private boolean test(VpeTemplateContext context, Node sourceNode) {
 		if (expression == null) {
 			return false;
 		}
 		try {
-			VpeValue value = expression.exec(pageContext, sourceNode);
+			VpeValue value = expression.exec(context, sourceNode);
 			
 			if (value == null) {
 				return false;

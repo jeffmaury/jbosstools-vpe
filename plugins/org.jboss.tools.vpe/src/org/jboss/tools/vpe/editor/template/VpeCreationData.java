@@ -14,13 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.tools.vpe.editor.mapping.VpeElementData;
-import org.jboss.tools.vpe.editor.util.VpeDebugUtil;
-import org.jboss.tools.vpe.editor.util.XmlUtil;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Node;
 
 public class VpeCreationData {
-	private nsIDOMNode node;
+	private Node node;
 	private List<VpeChildrenInfo> childrenInfoList;
 	private List<Node> illegalChildren;
 
@@ -31,17 +28,17 @@ public class VpeCreationData {
 	private Object data;
 	private VpeElementData elementData;
 
-	public VpeCreationData(nsIDOMNode node) {
+	public VpeCreationData(Node node) {
 		this.node = node;
 	}
 	
-	public VpeCreationData(nsIDOMNode node, boolean initializeChildren) {
+	public VpeCreationData(Node node, boolean initializeChildren) {
 		this.node = node;
 		if (initializeChildren)
 			this.childrenInfoList = new ArrayList<VpeChildrenInfo>();
 	} 
 
-	public nsIDOMNode getNode() {
+	public Node getNode() {
 		return node;
 	}
 

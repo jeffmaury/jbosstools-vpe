@@ -13,7 +13,7 @@ package org.jboss.tools.vpe.editor.template;
 import java.util.Map;
 
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
@@ -21,13 +21,11 @@ import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionInfo;
 import org.jboss.tools.vpe.editor.util.HTML;
 import org.jboss.tools.vpe.editor.util.VisualDomUtil;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMText;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
  * 
@@ -114,35 +112,35 @@ public class VpeVisualLinkCreator extends VpeAbstractCreator {
 
 	}
 
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement,
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement,
             Map visualNodeMap) throws VpeExpressionException {
 
-        nsIDOMElement a = visualDocument.createElement(HTML.TAG_A);
+        Element a = visualDocument.createElement(HTML.TAG_A);
 
         VpeCreatorInfo creatorInfo = new VpeCreatorInfo(a);
 
         if (dirExpr != null) {
-            String dir = dirExpr.exec(pageContext, sourceNode).stringValue();
+            String dir = dirExpr.exec(context, sourceNode).stringValue();
             a.setAttribute(HTML.ATTR_DIR, dir);
         }
 
         if (styleExpr != null) {
-            String style = styleExpr.exec(pageContext, sourceNode).stringValue();
+            String style = styleExpr.exec(context, sourceNode).stringValue();
             a.setAttribute(HTML.ATTR_STYLE, style);
         }
 
         if (classExpr != null) {
-            String classStyle = classExpr.exec(pageContext, sourceNode).stringValue();
+            String classStyle = classExpr.exec(context, sourceNode).stringValue();
             a.setAttribute(HTML.ATTR_CLASS, classStyle);
         }
 
         if (valueExpr != null) {
-            String value = valueExpr.exec(pageContext, sourceNode).stringValue();
+            String value = valueExpr.exec(context, sourceNode).stringValue();
             if (value != null && value.length() > 0) {
-                nsIDOMElement textContainer = VisualDomUtil
+                Element textContainer = VisualDomUtil
 						.createBorderlessContainer(visualDocument);
                 a.appendChild(textContainer);
-                nsIDOMText text = visualDocument.createTextNode(value);
+                Text text = visualDocument.createTextNode(value);
                 textContainer.appendChild(text);
             }
         }
@@ -157,19 +155,11 @@ public class VpeVisualLinkCreator extends VpeAbstractCreator {
 	 * @param a
 	 * @param attrName
 	 */
-	private void copyAttribute(Node sourceNode, nsIDOMElement a, String attrName) {
+	private void copyAttribute(Node sourceNode, Element a, String attrName) {
 		Element sourceA = (Element) sourceNode;
 		String attrValue = sourceA.getAttribute(attrName);
 		if ((attrValue != null) && (attrValue.length() > 0)) {
 			a.setAttribute(attrName, attrValue);
 		}
 	}
-
-	@Override
-	public boolean isRecreateAtAttrChange(VpePageContext pageContext,
-			Element sourceElement, nsIDOMDocument visualDocument,
-			nsIDOMNode visualNode, Object data, String name, String value) {
-		return true;
-	}
-
 }

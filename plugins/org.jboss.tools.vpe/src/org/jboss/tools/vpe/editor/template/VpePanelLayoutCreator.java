@@ -22,12 +22,11 @@ import org.eclipse.wst.sse.core.internal.provisional.StructuredModelManager;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.util.FileUtil;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -154,28 +153,10 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 		build(panelLayout, dependencyMap);
 	}
 
-	/* (non-Javadoc)
-	 * @see org.jboss.tools.vpe.editor.template.VpeAbstractCreator#isRecreateAtAttrChange(org.jboss.tools.vpe.editor.context.VpePageContext, org.w3c.dom.Element, org.mozilla.interfaces.nsIDOMDocument, org.mozilla.interfaces.nsIDOMNode, java.lang.Object, java.lang.String, java.lang.String)
-	 */
 	@Override
-	public boolean isRecreateAtAttrChange(VpePageContext pageContext,
-			Element sourceElement, nsIDOMDocument visualDocument,
-			nsIDOMNode visualNode, Object data, String name, String value) {
-		Map visualNodeMap = (Map)data;
-		if(name.equals(ATTR_PL_LAYOUT)) {
-			String layoutName = (String)visualNodeMap.get(ATTR_PL_LAYOUT);
-			if(!value.equals(VpePanelLayoutCreator.LAYOUT_NAVIGATION_RIGHT_ATTR_VALUE)
-					&& !value.equals(VpePanelLayoutCreator.LAYOUT_UPSIDEDOWN_VALUE)) {
-				value = LAYOUT_CLASSIC_ATTR_VALUE;
-			}
-			return !layoutName.equals(value);
-		} return false;
-	}
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) {
 
-	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) {
-
-		VpePanelLayoutElements layoutElements = new VpePanelLayoutElements(sourceNode, pageContext);
+		VpePanelLayoutElements layoutElements = new VpePanelLayoutElements(sourceNode, context);
 		visualNodeMap.put(ATTR_PL_LAYOUT, layoutElements.getLayoutName());
 		PanelLayoutTable layout = new PanelLayoutTable(visualDocument,sourceNode);
 		visualNodeMap.put(this,layout);
@@ -206,10 +187,10 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 		Node footer = null;
 		Node navigation = null;
 		Node body = null;
-		VpePageContext pageContext = null;
+		VpeTemplateContext context = null;
 
-		public VpePanelLayoutElements(Node source,VpePageContext context) {
-			pageContext = context;
+		public VpePanelLayoutElements(Node source,VpeTemplateContext context) {
+			context = context;
 			init(source);
 			layout = source;
 
@@ -267,7 +248,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 
 							if(page != null){
 								String pageName = page.getNodeValue();
-									IEditorInput input = pageContext.getEditPart().getEditorInput();
+									IEditorInput input = context.getEditor().getEditorInput();
 									IFile resource = FileUtil.getFile(input, pageName);
 									if(resource != null && (resource).exists()){
 										try{
@@ -323,7 +304,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 		}
 		public static int DEST=0, SOURCE=1, DEFAULT =2;
 
-		static void mapAttributes(nsIDOMElement dest, Node source, String[][] map) {
+		static void mapAttributes(Element dest, Node source, String[][] map) {
 			for (int i = 0;i<map.length;i++) {
 				dest.setAttribute(map[i][DEST],getAttributeValue(source,map[i][SOURCE],map[i][DEFAULT]));
 			}
@@ -353,7 +334,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 
 
 
-		public PanelLayoutTable(nsIDOMDocument visualDocument, Node source) {
+		public PanelLayoutTable(Document visualDocument, Node source) {
 			table = new Table(visualDocument, source);
 			creatorInfo = new VpeCreatorInfo(table.getDomElement());
 			Tr tr = table.crateRow();
@@ -425,24 +406,24 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 	}
 
 	public interface ElementWrapper {
-		public nsIDOMElement getDomElement();
-		public nsIDOMDocument getOwnerDocument();
+		public Element getDomElement();
+		public Document getOwnerDocument();
 		public void setAttributeValue(String name, String value);
 	}
 
 	public class DefaultNodeWrapper implements ElementWrapper {
 
-		protected nsIDOMElement element;
+		protected Element element;
 
-		public DefaultNodeWrapper(nsIDOMElement element) {
+		public DefaultNodeWrapper(Element element) {
 			this.element = element;
 		}
 
-		public nsIDOMElement getDomElement() {
+		public Element getDomElement() {
 			return element;
 		}
 
-		public nsIDOMDocument getOwnerDocument() {
+		public Document getOwnerDocument() {
 			return element.getOwnerDocument();
 		}
 
@@ -454,7 +435,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 
 	public class Table extends DefaultNodeWrapper {
 
-		public Table(nsIDOMDocument visualDocument,Node source ) {
+		public Table(Document visualDocument,Node source ) {
 			super(visualDocument.createElement(PanelLayoutTable.TABLE));
 			VpePanelLayoutElements.mapAttributes(
 				getDomElement(),
@@ -464,7 +445,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 		}
 
 		public Tr crateRow() {
-			nsIDOMElement tr = getOwnerDocument().createElement(PanelLayoutTable.TR);
+			Element tr = getOwnerDocument().createElement(PanelLayoutTable.TR);
 			getDomElement().appendChild(tr);
 			return new Tr(tr);
 		}
@@ -472,12 +453,12 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 	}
 
 	public class Tr extends DefaultNodeWrapper {
-		public Tr(nsIDOMElement rowNode) {
+		public Tr(Element rowNode) {
 			super(rowNode);
 		}
 
 		public Td createCell() {
-			nsIDOMElement tr = getOwnerDocument().createElement(PanelLayoutTable.TD);
+			Element tr = getOwnerDocument().createElement(PanelLayoutTable.TD);
 			getDomElement().appendChild(tr);
 			return new Td(tr);
 		}
@@ -493,7 +474,7 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 	public class Td extends DefaultNodeWrapper {
 
 
-		public Td(nsIDOMElement cellNode) {
+		public Td(Element cellNode) {
 			super(cellNode);
 		}
 	}
@@ -506,39 +487,4 @@ public class VpePanelLayoutCreator extends VpeAbstractCreator {
 		dependencyMap.setCreator(this, attrs);
 	}
 
-	@Override
-	public void setAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name, String value) {
-		PanelLayoutTable layout = (PanelLayoutTable)visualNodeMap.get(this);
-		VpePanelLayoutElements layoutElements = new VpePanelLayoutElements(sourceElement, pageContext);
-		layout.update(sourceElement,MAP_ATTR_TO_TABLE);
-		if(LAYOUT_NAVIGATION_RIGHT_ATTR_VALUE.equals(layoutElements.getLayoutName())) {
-			layout.updateTop(layoutElements.getHeaderFacet(),MAP_ATTR_TO_HEADER);
-			layout.updateLeft(layoutElements.getNavigationFacet(),MAP_ATTR_TO_NAVIGATION);
-			layout.updateRight(layoutElements.getBodyFacet(),MAP_ATTR_TO_BODY);
-			layout.updateBottom(layoutElements.getFooterFacet(),MAP_ATTR_TO_FOOTER);
-		} else if(LAYOUT_UPSIDEDOWN_VALUE.equals(layoutElements.getLayoutName())) {
-			layout.updateBottom(layoutElements.getHeaderFacet(),MAP_ATTR_TO_HEADER);
-			layout.updateLeft(layoutElements.getNavigationFacet(),MAP_ATTR_TO_NAVIGATION);
-			layout.updateRight(layoutElements.getBodyFacet(),MAP_ATTR_TO_BODY);
-			layout.updateTop(layoutElements.getFooterFacet(),MAP_ATTR_TO_FOOTER);
-		} else { // LAYOUT_CLASSIC_ATTR_VALUE
-			layout.updateTop(layoutElements.getHeaderFacet(),MAP_ATTR_TO_HEADER);
-			layout.updateLeft(layoutElements.getNavigationFacet(),MAP_ATTR_TO_NAVIGATION);
-			layout.updateRight(layoutElements.getBodyFacet(),MAP_ATTR_TO_BODY);
-			layout.updateBottom(layoutElements.getFooterFacet(),MAP_ATTR_TO_FOOTER);
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see org.jboss.tools.vpe.editor.template.VpeAbstractCreator#validate(org.jboss.tools.vpe.editor.context.VpePageContext, org.w3c.dom.Element, org.mozilla.interfaces.nsIDOMDocument, org.mozilla.interfaces.nsIDOMElement, org.mozilla.interfaces.nsIDOMElement, java.util.Map)
-	 */
-	@Override
-	public void validate(VpePageContext pageContext, Element sourceElement,
-			nsIDOMDocument visualDocument, nsIDOMElement visualParent,
-			nsIDOMElement visualElement, Map visualNodeMap) {
-	}
-
-	@Override
-	public void removeAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name) {
-	}
 }

@@ -16,9 +16,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.zip.ZipEntry;
 
 import org.eclipse.core.resources.IContainer;
@@ -29,21 +26,11 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.jdt.core.search.IJavaSearchScope;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.JarPackageFragmentRoot;
 import org.eclipse.jdt.internal.core.JavaElement;
 import org.eclipse.ui.IEditorInput;
@@ -52,20 +39,13 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.editors.text.ILocationProvider;
 import org.eclipse.ui.ide.IDE;
-import org.eclipse.wst.common.componentcore.ComponentCore;
-import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
-import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
-import org.jboss.tools.common.model.XModel;
-import org.jboss.tools.common.model.XModelObject;
-import org.jboss.tools.common.model.project.IModelNature;
 import org.jboss.tools.common.model.util.EclipseResourceUtil;
 import org.jboss.tools.common.resref.core.ResourceReference;
 import org.jboss.tools.jst.web.WebUtils;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.VpeIncludeInfo;
-import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
 import org.jboss.tools.vpe.editor.template.VpeCreatorUtil;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.resref.core.AbsoluteFolderReferenceList;
 import org.jboss.tools.vpe.resref.core.RelativeFolderReferenceList;
 
@@ -82,13 +62,13 @@ public class FileUtil {
 	 * @author mareshkau
 	 * @author yradtsevich
 	 */
-    public static final String getJSF2ResourcePath(VpePageContext pageContext,
+    public static final String getJSF2ResourcePath(VpeTemplateContext context,
     		String resourceStr) {
 		if (resourceStr.contains(":")) {	//$NON-NLS-1$
 				String[] parts = resourceStr.split(":");	//$NON-NLS-1$
-				return getJSF2ResourcePath(pageContext, parts[0], parts[1]);
+				return getJSF2ResourcePath(context, parts[0], parts[1]);
 		} else {
-			return getJSF2ResourcePath(pageContext, null, resourceStr);
+			return getJSF2ResourcePath(context, null, resourceStr);
 		}
     }
 
@@ -100,15 +80,15 @@ public class FileUtil {
 	 * @author yradtsevich
 	 * @see <a href="http://java.sun.com/javaee/javaserverfaces/2.0/docs/api/javax/faces/application/ResourceHandler.html">javax.faces.application.ResourceHandler</a>
 	 */
-    public static final String getJSF2ResourcePath(VpePageContext pageContext,
+    public static final String getJSF2ResourcePath(VpeTemplateContext context,
     		String library, String name) {
     	String tempPath = (library == null ? name : library + '/' + name);
     	tempPath = FileUtil.JSF2_RESOURCES + tempPath;
     	String result = ""; //$NON-NLS-1$
     	// if file not accessible and try to search in jar files
-    	IFile file = VpeCreatorUtil.getFile(tempPath, pageContext);
+    	IFile file = VpeCreatorUtil.getFile(tempPath, context);
 		if (file == null) {
-			String tempEntryPath = seachResourceInClassPath(pageContext,
+			String tempEntryPath = seachResourceInClassPath(context,
 					"META-INF" + tempPath); //$NON-NLS-1$
 			if (tempEntryPath != null) {
 				result = tempEntryPath;
@@ -123,20 +103,19 @@ public class FileUtil {
     	return result;
     }
 
-    public static boolean isExistsInJSF2Resources(VpePageContext pageContext, String resStr) {
+    public static boolean isExistsInJSF2Resources(VpeTemplateContext context, String resStr) {
     	String resourceString = resStr;
     	resourceString = resourceString.replaceAll(":", "/");  //$NON-NLS-1$//$NON-NLS-2$
     	resourceString = FileUtil.JSF2_RESOURCES+resourceString;
-    	if(FileUtil.getFile(pageContext.getEditPart().getEditorInput(), resourceString)!=null || 
-    			FileUtil.seachResourceInClassPath(pageContext, "META-INF"+resourceString)!=null) { //$NON-NLS-1$
+    	if(FileUtil.getFile(context.getEditor().getEditorInput(), resourceString)!=null || 
+    			FileUtil.seachResourceInClassPath(context, "META-INF"+resourceString)!=null) { //$NON-NLS-1$
     		return true;
     	}
     	return false;	
     }
     
-    private static IJavaProject getJavaProject(VpePageContext pageContext) {
-    	VpeVisualDomBuilder visualBuilder = pageContext != null ? pageContext.getVisualBuilder() : null;
-		VpeIncludeInfo currentIncludeInfo = visualBuilder != null ? visualBuilder.getCurrentIncludeInfo() : null;
+    private static IJavaProject getJavaProject(VpeTemplateContext context) {
+		VpeIncludeInfo currentIncludeInfo = context.getCurrentIncludeInfo();
 		IFile currentFile = currentIncludeInfo != null ? (IFile) currentIncludeInfo.getStorage() : null;
 		IProject project = currentFile != null ? currentFile.getProject() : null;
 		return JavaCore.create(project);
@@ -146,12 +125,12 @@ public class FileUtil {
      * Function search into project class path resource, if resource founded in jar file, make a 
      * temp copy of this resource and return path to copy.
      * @author mareshkau
-     * @param pageContext
+     * @param context
      * @param classPathResource
      * @return path to file
      */
-    private static String  seachResourceInClassPath(VpePageContext pageContext, String classPathResource) {
-		final IJavaProject javaProject = getJavaProject(pageContext);
+    private static String  seachResourceInClassPath(VpeTemplateContext context, String classPathResource) {
+		final IJavaProject javaProject = getJavaProject(context);
 		if (javaProject == null) {
 			return null;
 		}

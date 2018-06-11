@@ -13,22 +13,18 @@ package org.jboss.tools.vpe.editor.template;
 import java.util.Map;
 
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.VpeSourceDomBuilder;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionInfo;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMText;
-import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
-public class VpeValueCreator extends VpeAbstractCreator implements VpeOutputAttributes {
+public class VpeValueCreator extends VpeAbstractCreator {
 	public static final String SIGNATURE_VPE_VALUE = ":vpe:value"; //$NON-NLS-1$
 
 	private VpeExpression expression;
@@ -52,96 +48,16 @@ public class VpeValueCreator extends VpeAbstractCreator implements VpeOutputAttr
 		}
 	}
 
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
+	@Override
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) throws VpeExpressionException {
 		String value;
 		if (expression != null) {
-			value = expression.exec(pageContext, sourceNode).stringValue();
+			value = expression.exec(context, sourceNode).stringValue();
 		} else {
 			value = ""; //$NON-NLS-1$
 		}
-		nsIDOMText valueNode = visualDocument.createTextNode(value);
+		Text valueNode = visualDocument.createTextNode(value);
 		visualNodeMap.put(this, valueNode);
 		return new VpeCreatorInfo(valueNode);
-	}
-
-	public void refreshElement(VpePageContext pageContext, Element sourceElement, Map visualNodeMap) {
-		setValue(pageContext, sourceElement, visualNodeMap);
-	}
-
-	public void setAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name, String value) {
-		setValue(pageContext, sourceElement, visualNodeMap);
-	}
-
-	public void removeAttribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap, String name) {
-		setValue(pageContext, sourceElement, visualNodeMap);
-	}
-	
-	private void setValue(VpePageContext pageContext, Element sourceElement, Map<?,?> visualNodeMap) {
-		String value;
-		if (expression != null) {
-			try {
-				value = expression.exec(pageContext, sourceElement).stringValue();
-			} catch (VpeExpressionException ex) {
-				VpePlugin.reportProblem(ex);
-				value=""; //$NON-NLS-1$
-			}
-		} else {
-			value = ""; //$NON-NLS-1$
-		}
-		nsIDOMNode valueNode = (nsIDOMNode) visualNodeMap.get(this);
-		valueNode.setNodeValue(value);
-	}
-
-	public String[] getOutputAttributes() {
-		if (outputAttrName == null) {
-			return null;
-		}
-		return new String[] {outputAttrName};
-	}
-
-	public void setOutputAttributeValue(VpePageContext pageContext, Element sourceElement, Map visualNodeMap) {
-		if (outputAttrName != null) {
-			Node valueNode = (Node) visualNodeMap.get(this);
-			sourceElement.setAttribute(outputAttrName, valueNode.getNodeValue());
-		}
-	}
-
-	public nsIDOMText getOutputTextNode(VpePageContext pageContext, Element sourceElement, Map visualNodeMap) {
-		if (outputAttrName != null) {
-			return (nsIDOMText) visualNodeMap.get(this);
-		}
-		return null;
-	}
-
-	public boolean isEditabledAtribute(VpePageContext pageContext, Element sourceElement, Map visualNodeMap) {
-		if (outputAttrName != null && expression != null) {
-			String attrValue = null;
-			if (sourceElement.hasAttribute(outputAttrName)) {
-				attrValue = sourceElement.getAttribute(outputAttrName);
-			}
-			String exprValue;
-			try {
-				exprValue = expression.exec(pageContext, sourceElement).stringValue();
-				return exprValue.equals(attrValue);
-			} catch (VpeExpressionException ex) {
-				VpePlugin.reportProblem(ex);
-			}
-
-		}
-		return false;
-	}
-
-	public void setOutputAttributeSelection(VpePageContext pageContext, Element sourceElement, int offset, int length, Map visualNodeMap) {
-		if (outputAttrName != null) {
-			VpeSourceDomBuilder sourceBuilder = pageContext.getSourceBuilder();
-			Attr attr = sourceElement.getAttributeNode(outputAttrName);
-			if (attr != null) { 
-				if (isEditabledAtribute(pageContext, sourceElement, visualNodeMap)) {
-					sourceBuilder.setAttributeSelection(attr, offset, length);
-				} else {
-					sourceBuilder.setAttributeSelection(attr, 0, 0);
-				}
-			}
-		}
 	}
 }

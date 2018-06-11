@@ -10,32 +10,29 @@
  ******************************************************************************/ 
 package org.jboss.tools.vpe.editor.template;
 
-import static org.jboss.tools.vpe.xulrunner.util.XPCOM.queryInterface;
-
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public abstract class VpePseudoContentCreator {
 	private static final String PSEUDO_CONTENT_ATTR = "vpe:pseudo-element"; //$NON-NLS-1$
 	
-	public abstract void setPseudoContent(VpePageContext pageContext, Node sourceContainer, nsIDOMNode visualContainer, nsIDOMDocument visualDocument) throws VpeExpressionException;
+	public abstract void setPseudoContent(VpeTemplateContext context, Node sourceContainer, Node visualContainer, Document visualDocument) throws VpeExpressionException;
 	
-	public static void setPseudoAttribute(nsIDOMElement visualPseudoElement) {
+	public static void setPseudoAttribute(Element visualPseudoElement) {
 		visualPseudoElement.setAttribute(PSEUDO_CONTENT_ATTR, "yes"); //$NON-NLS-1$
 		VpeHtmlTemplate.makeModify(visualPseudoElement, false);
 	}
 	
-	public static boolean isPseudoElement(nsIDOMNode visualNode) {
-		return visualNode != null && visualNode.getNodeType() == Node.ELEMENT_NODE && "yes".equalsIgnoreCase((queryInterface(visualNode, nsIDOMElement.class)).getAttribute(PSEUDO_CONTENT_ATTR)); //$NON-NLS-1$
+	public static boolean isPseudoElement(Node visualNode) {
+		return visualNode != null && visualNode.getNodeType() == Node.ELEMENT_NODE && "yes".equalsIgnoreCase(((Element)visualNode).getAttribute(PSEUDO_CONTENT_ATTR)); //$NON-NLS-1$
 	}
 	
-	public static nsIDOMNode getContainerForPseudoContent(nsIDOMNode visualNode) {
+	public static Node getContainerForPseudoContent(Node visualNode) {
 		if (visualNode == null) return null;
-		nsIDOMNode visualElement;
+		Node visualElement;
 		if (visualNode.getNodeType() == Node.TEXT_NODE) {
 			visualElement = visualNode.getParentNode();
 		} else {
@@ -47,7 +44,7 @@ public abstract class VpePseudoContentCreator {
 			return null;
 		}
 		do {
-			nsIDOMNode lastNode = visualElement;
+			Node lastNode = visualElement;
 			visualElement = visualElement.getParentNode();
 			if (lastNode != visualNode) {
 			}

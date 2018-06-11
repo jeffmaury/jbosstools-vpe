@@ -11,16 +11,14 @@
 package org.jboss.tools.vpe.editor.template;
 
 import java.text.MessageFormat;
+
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.w3c.dom.Text;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.HTML;
 import org.jboss.tools.vpe.messages.VpeUIMessages;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
-import org.mozilla.interfaces.nsIDOMText;
 
 public class VpeTextPseudoContentCreator extends VpePseudoContentCreator {
 	private String text;
@@ -36,8 +34,8 @@ public class VpeTextPseudoContentCreator extends VpePseudoContentCreator {
 		}
 	}
 
-	public void setPseudoContent(VpePageContext pageContext, Node sourceContainer, nsIDOMNode visualContainer, nsIDOMDocument visualDocument) {
-		nsIDOMElement visualNewElement = visualDocument.createElement(HTML.TAG_SPAN);
+	public void setPseudoContent(VpeTemplateContext context, Node sourceContainer, Node visualContainer, Document visualDocument) {
+		Element visualNewElement = visualDocument.createElement(HTML.TAG_SPAN);
 		setPseudoAttribute(visualNewElement);
 		String text = this.text;
 		if (text == null) {
@@ -57,7 +55,7 @@ public class VpeTextPseudoContentCreator extends VpePseudoContentCreator {
 				text = VpeUIMessages.VpeTextPseudoContentCreator_InsertContent;
 			}
 		}
-		nsIDOMText newTextNode = visualDocument.createTextNode(text);
+		Text newTextNode = visualDocument.createTextNode(text);
 		visualNewElement.appendChild(newTextNode);
 		visualContainer.appendChild(visualNewElement);
 	}

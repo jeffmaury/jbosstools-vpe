@@ -12,15 +12,11 @@ package org.jboss.tools.vpe.editor.template;
 
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
-import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
 import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.jboss.tools.vpe.editor.util.Constants;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.VpeStyleUtil;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -31,8 +27,8 @@ public class VpeStyleCreator extends VpeAbstractCreator {
 	}
 
 	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode,
-			nsIDOMDocument visualDocument, nsIDOMElement visualElement,
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode,
+			Document visualDocument, Element visualElement,
 			Map visualNodeMap) {
 
 		Node textNode = sourceNode.getFirstChild();
@@ -44,8 +40,8 @@ public class VpeStyleCreator extends VpeAbstractCreator {
 			 * Remove CSS comments first:
 			 */
 			text = VpeStyleUtil.removeAllCssComments(text);
-			List<String> imports = VpeStyleUtil.findCssImportConstruction(text, pageContext);
-			VpeVisualDomBuilder vvdb = pageContext.getVisualBuilder();
+			List<String> imports = VpeStyleUtil.findCssImportConstruction(text, context);
+			VpeVisualDomBuilder vvdb = context.getVisualBuilder();
 			if (!imports.isEmpty()) {
 				for (String key : imports) {
 					/*
@@ -58,9 +54,9 @@ public class VpeStyleCreator extends VpeAbstractCreator {
 				 */
 				text = VpeStyleUtil.removeAllCssImportConstructions(text);
 			}
-			text = VpeStyleUtil.addFullPathIntoURLValue(text, pageContext);
+			text = VpeStyleUtil.addFullPathIntoURLValue(text, context);
 		}
-		nsIDOMNode newStyle = pageContext.getVisualBuilder()
+		Node newStyle = context.getVisualBuilder()
 				.addStyleNodeToHead(text);
 		visualNodeMap.put(this, newStyle);
 		return null;

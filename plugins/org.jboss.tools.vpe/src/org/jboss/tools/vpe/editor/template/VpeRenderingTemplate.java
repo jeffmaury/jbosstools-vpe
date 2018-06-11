@@ -10,9 +10,8 @@
  ******************************************************************************/
 package org.jboss.tools.vpe.editor.template;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
@@ -36,16 +35,10 @@ public class VpeRenderingTemplate extends VpeAbstractTemplate{
 		return instance;
 	}
 	
-	public VpeCreationData create(VpePageContext pageContext, Node sourceNode,
-			nsIDOMDocument visualDocument) {
+	@Override
+	public VpeCreationData create(VpeTemplateContext contexnt, Node sourceNode,
+			Document visualDocument) {
 		return  new VpeCreationData(null);
 	}
 
-	@Override
-	public Node getNodeForUpdate(VpePageContext pageContext, Node sourceNode,
-			nsIDOMNode visualNode, Object data) {
-		//if rendered=false, template hasn't visual presentations
-		//so we should update parent node
-		return sourceNode.getParentNode();
-	}
 }

@@ -33,7 +33,7 @@ import org.jboss.tools.common.model.util.EclipseResourceUtil;
 import org.jboss.tools.jst.web.project.WebProject;
 import org.jboss.tools.jst.web.tld.TaglibData;
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.util.FileUtil;
 import org.jboss.tools.vpe.editor.util.XmlUtil;
 import org.w3c.dom.Node;
@@ -56,13 +56,13 @@ public class CustomTLDReference {
 	 * @return full path to custom template if exist or null if not exist
 	 */
 	public static IStorage getCustomElementStorage(Node sourceNode,
-			VpePageContext pageContext) {
+			VpeTemplateContext context) {
 		List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(sourceNode,
-				pageContext);
+				context);
 		TaglibData sourceNodeTaglib = XmlUtil.getTaglibForPrefix(sourceNode
 				.getPrefix(), taglibs);
 		String uri = sourceNodeTaglib.getUri();
-		XModelObject xmodel = getCustomTaglibObject(pageContext, uri);
+		XModelObject xmodel = getCustomTaglibObject(context, uri);
 
 		XModelObject o = xmodel.getChildByPath(sourceNode.getLocalName()
 				+ XModelObjectConstants.SEPARATOR + "declaration"); //$NON-NLS-1$
@@ -109,14 +109,14 @@ public class CustomTLDReference {
 	 * Checks is resource exist in custom jsf 2 tags
 	 * 
 	 * @author mareshkau
-	 * @param pageContext
+	 * @param context
 	 * @param sourceNodeUri
 	 * @param sourceNodeName
 	 * @return
 	 */
 
 	public static boolean isExistInJsf2CustomComponenets(
-			VpePageContext pageContext, String sourceNodeUri,
+			VpeTemplateContext context, String sourceNodeUri,
 			String sourceNodeName) {
 		boolean result = false;
 		// check uri if it jsf 2.0 URI
@@ -126,7 +126,7 @@ public class CustomTLDReference {
 			// calculating resource path string
 			String jsfComponentResourcePath = sourceNodeUri.substring(
 					JSF2_CUSTOM_COMPONENT_URI.length(), sourceNodeUri.length());
-			String fileName = pageContext.getEditPart().getEditorInput()
+			String fileName = context.getEditor().getEditorInput()
 					.getName();
 			String jsfComponentExtension = ".xhtml"; //$NON-NLS-1$
 			if (fileName != null && fileName.lastIndexOf('.') != -1) {
@@ -137,7 +137,7 @@ public class CustomTLDReference {
 				}
 				jsfComponentResourcePath = jsfComponentResourcePath + '/'
 						+ sourceNodeName + jsfComponentExtension;
-				result = FileUtil.isExistsInJSF2Resources(pageContext,
+				result = FileUtil.isExistsInJSF2Resources(context,
 						jsfComponentResourcePath);
 			}
 
@@ -145,14 +145,14 @@ public class CustomTLDReference {
 		return result;
 	}
 
-	public static IStorage getJsf2CustomComponentStorage(VpePageContext pageContext, String sourceNodeUri, String sourceNodeName){
+	public static IStorage getJsf2CustomComponentStorage(VpeTemplateContext context, String sourceNodeUri, String sourceNodeName){
 		IStorage result=null;
 		//check uri if it jsf 2.0 URI
 		sourceNodeUri = sourceNodeUri.trim();
 		if(sourceNodeUri!=null && sourceNodeUri.startsWith(JSF2_CUSTOM_COMPONENT_URI)) {
 			//calculating resource path string
 			String jsfComponentResourcePath = sourceNodeUri.substring(JSF2_CUSTOM_COMPONENT_URI.length(),sourceNodeUri.length());
-			String fileName = pageContext.getEditPart().getEditorInput().getName();
+			String fileName = context.getEditor().getEditorInput().getName();
 			String jsfComponentExtension = ".xhtml"; //$NON-NLS-1$
 			if(fileName!=null && fileName.lastIndexOf('.')!=-1){
 				String fileExtension = fileName.substring(fileName.lastIndexOf('.'),fileName.length());
@@ -160,8 +160,8 @@ public class CustomTLDReference {
 					jsfComponentExtension = fileExtension;
 				}
 				jsfComponentResourcePath=jsfComponentResourcePath+'/'+sourceNodeName+jsfComponentExtension;
-				String fullResourcePath = FileUtil.getJSF2ResourcePath(pageContext, jsfComponentResourcePath);
-				result = FileUtil.getFile(pageContext.getEditPart().getEditorInput(), fullResourcePath); 
+				String fullResourcePath = FileUtil.getJSF2ResourcePath(context, jsfComponentResourcePath);
+				result = FileUtil.getFile(context.getEditor().getEditorInput(), fullResourcePath); 
 				if(result!=null) {
 					return result;
 				}
@@ -203,15 +203,15 @@ public class CustomTLDReference {
 
 	/**
 	 * 
-	 * @param pageContext
+	 * @param context
 	 * @param uri
 	 *            node namespace uri
 	 * @return true if such template defined in facelets lib or falce if not
 	 *         defined
 	 */
-	public static boolean isExistInCustomTlds(VpePageContext pageContext,
+	public static boolean isExistInCustomTlds(VpeTemplateContext context,
 			String uri) {
-		return getCustomTaglibObject(pageContext, uri) != null ? true : false;
+		return getCustomTaglibObject(context, uri) != null ? true : false;
 	}
 
 	/**
@@ -220,8 +220,8 @@ public class CustomTLDReference {
 	 * @return the customTLDDataMap
 	 */
 	private static XModelObject getCustomTaglibObject(
-			VpePageContext pageContext, String uri) {
-		IEditorInput editorInput = pageContext.getEditPart().getEditorInput();
+			VpeTemplateContext context, String uri) {
+		IEditorInput editorInput = context.getEditor().getEditorInput();
 
 		if (editorInput instanceof IFileEditorInput) {
 			XModel xm = null;

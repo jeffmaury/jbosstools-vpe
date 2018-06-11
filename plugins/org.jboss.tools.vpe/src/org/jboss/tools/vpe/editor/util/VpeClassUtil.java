@@ -13,7 +13,7 @@ package org.jboss.tools.vpe.editor.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.w3c.dom.Node;
@@ -31,15 +31,15 @@ public class VpeClassUtil {
 	 * 
 	 * @param expression
 	 * @param sourceNode
-	 * @param pageContext
+	 * @param context
 	 * @return names of style classes
 	 * @throws VpeExpressionException
 	 */
 	public static List<String> getClasses(VpeExpression expression, Node sourceNode,
-			VpePageContext pageContext) throws VpeExpressionException {
+			VpeTemplateContext context) throws VpeExpressionException {
 		List<String> ret = new ArrayList<String>();
 		if (expression != null && sourceNode != null) {
-			String classes = expression.exec(pageContext, sourceNode)
+			String classes = expression.exec(context, sourceNode)
 					.stringValue();
 			String[] a = classes.split(CLASSES_DELIMITER);
 			for (int i = 0; i < a.length; i++) {

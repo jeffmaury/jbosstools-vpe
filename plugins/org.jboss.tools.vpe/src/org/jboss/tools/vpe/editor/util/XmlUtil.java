@@ -25,8 +25,9 @@ import org.eclipse.jst.jsp.core.internal.contentmodel.tld.TLDCMDocumentManager;
 import org.eclipse.jst.jsp.core.internal.contentmodel.tld.TaglibTracker;
 import org.jboss.tools.jst.web.tld.TaglibData;
 import org.jboss.tools.vpe.VpePlugin;
+import org.jboss.tools.vpe.editor.context.AbstractPageContext;
 import org.jboss.tools.vpe.editor.context.VpePageContext;
-import org.mozilla.interfaces.nsIDOMNode;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -112,19 +113,18 @@ public class XmlUtil {
 	* @return collection of taglibs
 	*/	
 	public static List<TaglibData> getTaglibsForNode(Node source,
-			VpePageContext pageContext) {
+			VpeTemplateContext context) {
 
 		List<TaglibData> taglibData = new ArrayList<TaglibData>();
 
 		
 		// Added by Sergey Dzmitrovich Fix for JBIDE-2581
-		IPath path = FileUtil.getInputPath(pageContext.getEditPart()
+		IPath path = FileUtil.getInputPath(context.getEditor()
 				.getEditorInput());
 		
 		if (path != null
 				&& path.getFileExtension().equals(Constants.JSP_FILE_EXTENSION)) {
-			IDocument document = pageContext.getSourceBuilder()
-					.getStructuredTextViewer().getDocument();
+			IDocument document = context.getStructuredTextViewer().getDocument();
 
 			TLDCMDocumentManager tldcmDocumentManager = TaglibController
 					.getTLDCMDocumentManager(document);
@@ -141,7 +141,7 @@ public class XmlUtil {
 
 		}
 		// add internal taglibs JBIDE-2065
-		List<TaglibData> includeTaglibs = pageContext.getIncludeTaglibs();
+		List<TaglibData> includeTaglibs = context.getIncludeTaglibs();
 		for (TaglibData includedTaglib : includeTaglibs) {
 			addTaglib(taglibData, includedTaglib.getUri(), includedTaglib
 					.getPrefix(), true);
@@ -151,9 +151,9 @@ public class XmlUtil {
 
 	//helper method
 	public static boolean hasTaglib(Node sourceNode,
-			VpePageContext pageContext, String sourcePrefix) {
+			VpeTemplateContext context, String sourcePrefix) {
 		List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(sourceNode,
-			    pageContext);
+			    context);
 		TaglibData sourceNodeTaglib = XmlUtil.getTaglibForPrefix(
 			    sourcePrefix, taglibs);
 		return sourceNodeTaglib != null;
@@ -161,9 +161,9 @@ public class XmlUtil {
 
 	//helper method
 	public static String getTaglibUri(Node sourceNode,
-			VpePageContext pageContext, String sourcePrefix) {
+			VpeTemplateContext context, String sourcePrefix) {
 		List<TaglibData> taglibs = XmlUtil.getTaglibsForNode(sourceNode,
-			    pageContext);
+			    context);
 		TaglibData sourceNodeTaglib = XmlUtil.getTaglibForPrefix(
 			    sourcePrefix, taglibs);
 		return sourceNodeTaglib == null ? null : sourceNodeTaglib.getUri();
@@ -254,9 +254,8 @@ public class XmlUtil {
 	 * @param cloneNode
 	 * @return
 	 */
-	public static final nsIDOMNode createClone(nsIDOMNode nodeToClone){
-		nsIDOMNode result = nodeToClone.cloneNode(true);
-		return result;
+	public static final Node createClone(Node nodeToClone){
+		return nodeToClone.cloneNode(true);
 	}
 	
 

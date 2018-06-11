@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.jboss.tools.vpe.editor.mapping;
 
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Node;
 
 /**
@@ -36,21 +35,21 @@ public class NodeData {
 	/**
 	 * visual presentation of attribute
 	 */
-	protected nsIDOMNode visualNode;
+	protected Node visualNode;
 
 	/**
 	 * mark if editable
 	 */
 	protected boolean isEditable;
 
-	public NodeData(Node sourceNode, nsIDOMNode visualNode, boolean isEditable) {
+	public NodeData(Node sourceNode, Node visualNode, boolean isEditable) {
 		this.sourceNode = sourceNode;
 		this.visualNode = visualNode;
 		this.isEditable = isEditable;
 
 	}
 
-	public NodeData(Node sourceNode, nsIDOMNode visualNode) {
+	public NodeData(Node sourceNode, Node visualNode) {
 		this.sourceNode = sourceNode;
 		this.visualNode = visualNode;
 		this.isEditable = true;
@@ -72,11 +71,11 @@ public class NodeData {
 		this.sourceNode = sourceNode;
 	}
 
-	public nsIDOMNode getVisualNode() {
+	public Node getVisualNode() {
 		return visualNode;
 	}
 
-	public void setVisualNode(nsIDOMNode visualNode) {
+	public void setVisualNode(Node visualNode) {
 		this.visualNode = visualNode;
 	}
 

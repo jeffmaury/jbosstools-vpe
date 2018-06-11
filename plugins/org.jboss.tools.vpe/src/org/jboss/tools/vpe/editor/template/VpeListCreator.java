@@ -13,8 +13,6 @@ package org.jboss.tools.vpe.editor.template;
 /**
  * @author Gavrs
  *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.tools.vpe.VpePlugin;
-import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilderException;
@@ -30,10 +28,8 @@ import org.jboss.tools.vpe.editor.template.expression.VpeExpressionException;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionInfo;
 import org.jboss.tools.vpe.editor.template.expression.VpeValue;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.mozilla.interfaces.nsIDOMAttr;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -80,26 +76,26 @@ public class VpeListCreator extends VpeAbstractCreator{
 	}
 	
 	@Override
-	public VpeCreatorInfo create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, nsIDOMElement visualElement, Map visualNodeMap) throws VpeExpressionException {
+	public VpeCreatorInfo create(VpeTemplateContext context, Node sourceNode, Document visualDocument, Element visualElement, Map visualNodeMap) throws VpeExpressionException {
 		String strValue=null;
 		int listSize = 0;
 		if (layoutExpr != null) {
-			VpeValue vpeValue = layoutExpr.exec(pageContext, sourceNode);
+			VpeValue vpeValue = layoutExpr.exec(context, sourceNode);
 			if (vpeValue != null) {
 			 strValue = vpeValue.stringValue();
 				
 			}
 		}
 		
-		nsIDOMElement visualList = visualDocument.createElement("true".equals(strValue)?HTML.TAG_OL:HTML.TAG_UL); //$NON-NLS-1$
+		Element visualList = visualDocument.createElement("true".equals(strValue)?HTML.TAG_OL:HTML.TAG_UL); //$NON-NLS-1$
 		VpeCreatorInfo creatorInfo = new VpeCreatorInfo(visualList);
 
 		for (int i = 0; i < propertyCreators.size(); i++) {
 			VpeCreator creator = (VpeCreator)propertyCreators.get(i);
 			if (creator != null) {
-				VpeCreatorInfo info = creator.create(pageContext, (Element) sourceNode, visualDocument, visualList, visualNodeMap);
+				VpeCreatorInfo info = creator.create(context, (Element) sourceNode, visualDocument, visualList, visualNodeMap);
 				if (info != null && info.getVisualNode() != null) {
-					nsIDOMAttr attr = (nsIDOMAttr)info.getVisualNode();
+					Attr attr = (Attr)info.getVisualNode();
 					visualList.setAttributeNode(attr);
 				}
 			}
@@ -124,7 +120,7 @@ public class VpeListCreator extends VpeAbstractCreator{
 				}
 				
 				for (int i = 0; i < listSize; i++) {
-					nsIDOMElement visualLi = visualDocument.createElement(HTML.TAG_LI);
+					Element visualLi = visualDocument.createElement(HTML.TAG_LI);
 					
 					
 						VpeChildrenInfo childrenInfo = new VpeChildrenInfo(visualLi);

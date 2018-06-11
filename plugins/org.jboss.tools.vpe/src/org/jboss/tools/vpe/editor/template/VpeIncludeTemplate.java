@@ -16,8 +16,8 @@ import org.eclipse.jface.text.Region;
 import org.jboss.tools.jst.web.ui.internal.editor.util.NodesManagingUtil;
 import org.jboss.tools.vpe.VpePlugin;
 import org.jboss.tools.vpe.editor.VpeIncludeInfo;
-import org.jboss.tools.vpe.editor.VpeVisualDomBuilder;
 import org.jboss.tools.vpe.editor.context.VpePageContext;
+import org.jboss.tools.vpe.editor.template.VpeTemplateManager.VpeTemplateContext;
 import org.jboss.tools.vpe.editor.template.expression.VpeAttributeOperand;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpression;
 import org.jboss.tools.vpe.editor.template.expression.VpeExpressionBuilder;
@@ -27,9 +27,6 @@ import org.jboss.tools.vpe.editor.template.expression.VpeValue;
 import org.jboss.tools.vpe.editor.util.FaceletUtil;
 import org.jboss.tools.vpe.editor.util.FileUtil;
 import org.jboss.tools.vpe.editor.util.HTML;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,32 +51,32 @@ public class VpeIncludeTemplate extends VpeAbstractTemplate {
 		initTemplateSections(templateElement, false, true, false, false, false);
 	}
 
-	public VpeCreationData create(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument) {
+	public VpeCreationData create(VpeTemplateContext context, Node sourceNode, Document visualDocument) {
 		String fileName = null;
 		if (fileNameExpression != null) {
 			VpeValue vpeValue;
 			try {
-				vpeValue = fileNameExpression.exec(pageContext, sourceNode);
+				vpeValue = fileNameExpression.exec(context, sourceNode);
 			if (vpeValue != null && vpeValue.stringValue().length() > 0) {
 				fileName = vpeValue.stringValue();
-				VpeIncludeInfo info = pageContext.getVisualBuilder().getCurrentIncludeInfo();
+				VpeIncludeInfo info = context.getCurrentIncludeInfo();
 				if(info != null && info.getStorage() instanceof IFile) {
 					IFile templateFile = (IFile) info.getStorage();
 					IFile file = FileUtil.getFile(fileName, templateFile);
 					
 					if (file != null) {
-						if (!pageContext.getVisualBuilder().isFileInIncludeStack(file)) {
-							Document document = pageContext.getVisualBuilder().getIncludeDocuments().get(file);
+						if (!context.isFileInIncludeStack(file)) {
+							Document document = context.getIncludeDocuments().get(file);
 							if (document == null) {
 								document = VpeCreatorUtil.getDocumentForRead(file);
 								if (document != null) {
-									pageContext.getVisualBuilder().getIncludeDocuments().put(file, document);
+									context.getIncludeDocuments().put(file, document);
 								}
 							}
 							if (document != null) {
-								VpeCreationData creationData = createInclude(document, visualDocument);
+								VpeCreationData creationData = createInclude(context, document, visualDocument);
 								creationData.setData(file);
-								pageContext.getVisualBuilder().pushIncludeStack(new VpeIncludeInfo((Element)sourceNode, file, document));
+								context.pushIncludeStack(new VpeIncludeInfo((Element)sourceNode, file, document));
 								return creationData;
 							}
 						}
@@ -93,32 +90,14 @@ public class VpeIncludeTemplate extends VpeAbstractTemplate {
 			}
 		}
 		
-		VpeCreationData creationData = createStub(fileName, visualDocument);
+		VpeCreationData creationData = createStub(context, fileName, visualDocument);
 		creationData.setData(null);
 		return creationData;
 	}
 
-	@Override
-	public void validate(VpePageContext pageContext, Node sourceNode, nsIDOMDocument visualDocument, VpeCreationData data) {
-		if (data.getData() != null) {
-			VpeIncludeInfo includeInfo = pageContext.getVisualBuilder().popIncludeStack();
-			if (includeInfo != null) {
-//				VpeCreatorUtil.releaseDocumentFromRead(includeInfo.getDocument());
-			}
-		}
-	}
-
-	@Override
-	public void beforeRemove(VpePageContext pageContext, Node sourceNode, nsIDOMNode visualNode, Object data) {
-		IFile file = (IFile)data;
-		if (file != null) {
-			pageContext.getEditPart().getController().getIncludeList().removeIncludeModel(file);
-		}
-	}
-	
-	protected VpeCreationData createInclude(Document sourceDocument, nsIDOMDocument visualDocument) {
-		nsIDOMElement visualNewElement = visualDocument.createElement(HTML.TAG_DIV);
-		VpeVisualDomBuilder.markIncludeElement(visualNewElement);
+	protected VpeCreationData createInclude(VpeTemplateContext context, Document sourceDocument, Document visualDocument) {
+		Element visualNewElement = visualDocument.createElement(HTML.TAG_DIV);
+		context.markIncludeElement(visualNewElement);
 		VpeCreationData creationData = new VpeCreationData(visualNewElement);
 		if (children) {
 			VpeChildrenInfo childrenInfo = new VpeChildrenInfo(visualNewElement);
@@ -139,50 +118,13 @@ public class VpeIncludeTemplate extends VpeAbstractTemplate {
 		return creationData;
 	}
 	
-	protected VpeCreationData createStub(String fileName, nsIDOMDocument visualDocument) {
-		nsIDOMElement visualNewElement = visualDocument.createElement(HTML.TAG_DIV);
+	protected VpeCreationData createStub(VpeTemplateContext context, String fileName, Document visualDocument) {
+		Element visualNewElement = visualDocument.createElement(HTML.TAG_DIV);
 		visualNewElement.setAttribute("style", "background-color:#ECF3FF;cursor:pointer;padding:0 5px;margin:3px 0;font-style:italic;color:#0051DD;"); //$NON-NLS-1$ //$NON-NLS-2$
-		VpeVisualDomBuilder.markIncludeElement(visualNewElement);
+		context.markIncludeElement(visualNewElement);
 		if (fileName != null) {
 			visualNewElement.appendChild(visualDocument.createTextNode(fileName));
 		}
 		return new VpeCreationData(visualNewElement);
 	}
-
-	/* (non-Javadoc)
-	 * @see org.jboss.tools.vpe.editor.template.VpeAbstractTemplate#getSourceRegionForOpenOn(org.jboss.tools.vpe.editor.context.VpePageContext, org.w3c.dom.Node, org.mozilla.interfaces.nsIDOMNode)
-	 */
-	/**
-	 * @author mareshkau
-	 */
-	@Override
-	public IRegion getSourceRegionForOpenOn(VpePageContext pageContext,
-			Node sourceNode, nsIDOMNode domNode) {
-
-		if (sourceNode != null && this.fileNameExpression != null && this.fileNameExpression instanceof VpeAttributeOperand) {
-			Element sourceElement = (Element) sourceNode;
-			Node paramAttr = sourceElement.getAttributeNode(((VpeAttributeOperand)this.fileNameExpression).getAttributeName());
-			return new Region(NodesManagingUtil.getStartOffsetNode(paramAttr),0);			
-		}
-		return null;
-	}
-
-//	@Override
-//	public void openIncludeEditor(VpePageContext pageContext, Element sourceElement, Object data) {
-//		if (sourceElement != null && fileNameExpression != null) {
-//			VpeValue vpeValue;
-//			try {
-//				vpeValue = fileNameExpression.exec(pageContext, sourceElement);
-//				if (vpeValue != null && vpeValue.stringValue().length() > 0) {
-//				    pageContext.openIncludeFile(vpeValue.stringValue());
-//				}
-//			} catch (VpeExpressionException e) {
-//					
-//					VpePlugin.reportProblem(e);
-//			}
-//		}
-//	}
-
-	
-	
 }
